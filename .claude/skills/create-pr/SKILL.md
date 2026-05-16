@@ -51,8 +51,7 @@ From the gathered context, determine:
 
 - **Type of Change**: Match the changes to the PR template categories (`feat`,
   `fix`, `docs`, `style`, `refactor`, `test`, `chore`)
-- **Course/Directories Affected**: Which top-level directory (MIT/, THU/,
-  SocialPlatform/) is affected
+- **Directories Affected**: Which top-level directory (`docs/`, `.github/`, etc.) is affected
 - **Files Changed**: List the files
 - **Summary**: 1-3 bullet points describing what the PR does and why
 
@@ -92,5 +91,5 @@ Report back to the user with:
 - If there are uncommitted changes, warn the user and ask if they want to
   include them or commit first
 - If the branch already has an open PR, ask the user if they want to update it
-  (use `gh pr update`)
+  (use `gh pr edit <number> --title "..." --body "..."`)
 - Follow the commit message format from the project conventions
