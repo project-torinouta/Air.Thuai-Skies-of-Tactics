@@ -43,10 +43,12 @@ cd client/client
 python local_client.py --mode local --board ./BoardCase/case1.txt
 ```
 
-**参数说明：** | 参数 | 说明 | 可选值 | 默认值 | | --------- | ------------ |
--------------------- | ----------------------- | | `--mode` | 运行模式 | `local`
-/ `function` | `local` | | `--board` | 棋盘文件路径 | 任意有效路径 |
-`./BoardCase/case1.txt` |
+**参数说明：**
+
+| 参数      | 说明         | 可选值               | 默认值                  |
+| --------- | ------------ | -------------------- | ----------------------- |
+| `--mode`  | 运行模式     | `local` / `function` | `local`                 |
+| `--board` | 棋盘文件路径 | 任意有效路径         | `./BoardCase/case1.txt` |
 
 #### 方式二：AI 对战（测试你的策略）
 
@@ -57,11 +59,13 @@ python local_client.py --mode function --strategy defensive
 python local_client.py --mode function --strategy mcts --mcts-simulations 25
 ```
 
-**参数说明：** | 参数 | 说明 | 可选值 | 默认值 | | -------------------- |
-------------- | ----------------------------------- | ------------ | | `--mode`
-| 运行模式 | `function` | - | | `--strategy` | AI 策略类型 | `aggressive` /
-`defensive` / `mcts` | `aggressive` | | `--mcts-simulations` | MCTS 模拟次数 |
-正整数 | 25 |
+**参数说明：**
+
+| 参数                 | 说明          | 可选值                              | 默认值       |
+| -------------------- | ------------- | ----------------------------------- | ------------ |
+| `--mode`             | 运行模式      | `function`                          | -            |
+| `--strategy`         | AI 策略类型   | `aggressive` / `defensive` / `mcts` | `aggressive` |
+| `--mcts-simulations` | MCTS 模拟次数 | 正整数                              | 25           |
 
 ### 0.3 选手需要修改的文件
 
