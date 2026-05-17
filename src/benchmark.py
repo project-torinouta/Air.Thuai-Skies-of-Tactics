@@ -60,6 +60,10 @@ from strategies.tactical import (
     get_tactical_action_strategy,
     get_tactical_init_strategy,
 )
+from strategies.sniper import (
+    get_sniper_action_strategy,
+    get_sniper_init_strategy,
+)
 from strategies.warrior import (
     get_warrior_action_strategy,
     get_warrior_init_strategy,
@@ -79,6 +83,7 @@ STRATEGY_NAMES: List[str] = [
     "warrior",
     "ranger",
     "random",
+    "sniper",
 ]
 
 INIT_NAMES: List[str] = [
@@ -88,6 +93,7 @@ INIT_NAMES: List[str] = [
     "warrior",
     "ranger",
     "random",
+    "sniper",
 ]
 
 ACTION_NAMES: List[str] = [
@@ -99,6 +105,7 @@ ACTION_NAMES: List[str] = [
     "warrior",
     "ranger",
     "random",
+    "sniper",
 ]
 
 _GENERATED_BOARD_DIR: str = "BoardCase"
@@ -123,6 +130,8 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_warrior_init_strategy()
     if name == "ranger":
         return get_ranger_init_strategy()
+    if name == "sniper":
+        return get_sniper_init_strategy()
     if name == "random":
         return get_random_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
@@ -160,6 +169,8 @@ def get_action_strategy(
         return get_warrior_action_strategy()
     if name == "ranger":
         return get_ranger_action_strategy()
+    if name == "sniper":
+        return get_sniper_action_strategy()
     if name == "random":
         return get_random_action_strategy()
     raise ValueError(f"Unknown action strategy: {name}")
