@@ -14,6 +14,7 @@ Contestants can use and modify these functions freely.
 from __future__ import annotations
 
 import copy
+from typing import List, Optional
 
 import numpy as np
 
@@ -62,8 +63,8 @@ def get_state_score(env: Environment) -> float:
 
 
 def get_legal_moves(
-    env: Environment, piece: Piece | None = None
-) -> list[Point]:
+    env: Environment, piece: Optional[Piece] = None
+) -> List[Point]:
     """Get all legal move positions for a piece.
 
     Uses the board's ``valid_target`` method to compute reachable cells
@@ -72,9 +73,9 @@ def get_legal_moves(
     :param env: The game environment.
     :type env: Environment
     :param piece: The piece to query. Defaults to the current piece.
-    :type piece: Piece | None
+    :type piece: Optional[Piece]
     :returns: A list of reachable positions.
-    :rtype: list[Point]
+    :rtype: List[Point]
     """
     if piece is None:
         piece = env.current_piece
@@ -82,7 +83,7 @@ def get_legal_moves(
     if piece is None or not piece.is_alive:
         return []
 
-    legal_moves: list[Point] = []
+    legal_moves: List[Point] = []
     mask = env.board.valid_target(piece, piece.movement)
 
     for x in range(env.board.width):
@@ -94,16 +95,16 @@ def get_legal_moves(
 
 
 def get_attackable_targets(
-    env: Environment, piece: Piece | None = None
-) -> list[Piece]:
+    env: Environment, piece: Optional[Piece] = None
+) -> List[Piece]:
     """Get all enemy pieces within attack range of a piece.
 
     :param env: The game environment.
     :type env: Environment
     :param piece: The attacking piece. Defaults to the current piece.
-    :type piece: Piece | None
+    :type piece: Optional[Piece]
     :returns: A list of attackable enemy pieces.
-    :rtype: list[Piece]
+    :rtype: List[Piece]
     """
     if piece is None:
         piece = env.current_piece
@@ -111,7 +112,7 @@ def get_attackable_targets(
     if piece is None or not piece.is_alive:
         return []
 
-    targets: list[Piece] = []
+    targets: List[Piece] = []
     for target in env.action_queue:
         if (
             target.is_alive

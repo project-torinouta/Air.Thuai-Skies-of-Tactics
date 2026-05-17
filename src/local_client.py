@@ -14,7 +14,15 @@ Supports two modes:
 import argparse
 
 from env import Environment
-from strategy_factory import StrategyFactory
+from strategies.aggressive import (
+    get_aggressive_init_strategy,
+    get_aggressive_action_strategy,
+)
+from strategies.defensive import (
+    get_defensive_init_strategy,
+    get_defensive_action_strategy,
+)
+from strategies.mcts import get_mcts_action_strategy
 
 
 def parse_args() -> argparse.Namespace:
@@ -65,16 +73,16 @@ def _strategies_for(args: argparse.Namespace):
     """
     if args.strategy == "aggressive":
         return (
-            StrategyFactory.get_aggressive_init_strategy(),
-            StrategyFactory.get_aggressive_action_strategy(),
+            get_aggressive_init_strategy(),
+            get_aggressive_action_strategy(),
         )
     if args.strategy == "defensive":
         return (
-            StrategyFactory.get_defensive_init_strategy(),
-            StrategyFactory.get_defensive_action_strategy(),
+            get_defensive_init_strategy(),
+            get_defensive_action_strategy(),
         )
-    init_s = StrategyFactory.get_defensive_init_strategy()
-    action_s = StrategyFactory.get_mcts_action_strategy(args.mcts_simulations)
+    init_s = get_defensive_init_strategy()
+    action_s = get_mcts_action_strategy(args.mcts_simulations)
     return init_s, action_s
 
 

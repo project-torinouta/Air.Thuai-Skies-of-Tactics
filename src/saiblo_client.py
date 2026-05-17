@@ -18,13 +18,14 @@ Aligns with the Saiblo platform protocol:
 import json
 import struct
 import sys
+from typing import Optional
 
 
 class SaibloClient:
     """Client for the Saiblo stdin/stdout communication protocol."""
 
     @staticmethod
-    def read_payload() -> str | None:
+    def read_payload() -> Optional[str]:
         """Read one content payload from the judger.
 
         The judger sends UTF-8 text without a length header, using newline
@@ -42,7 +43,7 @@ class SaibloClient:
                 return text
 
     @staticmethod
-    def read_message() -> dict | None:
+    def read_message() -> Optional[dict]:
         """Read and deserialize one JSON message from the judger.
 
         :returns: The parsed JSON dict, or None if the stream is closed.

@@ -14,7 +14,7 @@ It is used both by the local client and the Saiblo competition platform.
 import os
 import random
 from queue import PriorityQueue
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -84,7 +84,7 @@ class Piece:
         self.position: Point = Point(0, 0)
         self.height: int = 0
         self.attack_range: int = 0
-        self.spell_list: list[int] = []
+        self.spell_list: List[int] = []
         self.death_round: int = -1
         self.team: int = 0
         self.queue_index: int = 0
@@ -469,7 +469,7 @@ class Player:
         player_id: int,
         arg: Any,
         index: int,
-        occupied_same_player: list[tuple[int, int]],
+        occupied_same_player: List[Tuple[int, int]],
     ) -> None:
         """Validate piece initialisation parameters.
 
@@ -486,7 +486,7 @@ class Player:
         :type index: int
         :param occupied_same_player: List of (x, y) tuples already occupied
             by the same player's pieces.
-        :type occupied_same_player: list[tuple[int, int]]
+        :type occupied_same_player: List[Tuple[int, int]]
         :raises ValueError: If any validation check fails.
         """
         prefix = f"Piece {index + 1}"
@@ -574,7 +574,7 @@ class Player:
 
         self.pieces = np.array(pieces_list, dtype=object)
 
-    def init_input(self, board: "Board", player_id: int) -> list[int]:
+    def init_input(self, board: "Board", player_id: int) -> List[int]:
         """Read piece initialisation from the console.
 
         Prompts the user for attributes, equipment, and position.
@@ -585,9 +585,9 @@ class Player:
         :type player_id: int
         :returns: A list of [strength, dexterity, intelligence, weapon,
             armor, x, y].
-        :rtype: list[int]
+        :rtype: List[int]
         """
-        initialization_set: list[int] = []
+        initialization_set: List[int] = []
         try:
             while True:
                 print("Enter attribute allocation (format: strength dexterity intelligence, total <= 30):")
@@ -721,8 +721,8 @@ class Board:
     def __init__(self, if_log: int = 1) -> None:
         self.width: int = 0
         self.height: int = 0
-        self.grid: np.ndarray | None = None
-        self.height_map: np.ndarray | None = None
+        self.grid: Optional[np.ndarray] = None
+        self.height_map: Optional[np.ndarray] = None
         self.boarder: int = 0
         self.if_log: int = if_log
 
@@ -734,7 +734,7 @@ class Board:
         """Return the board height."""
         return self.height
 
-    def valid_target(self, piece: Piece, movement: float) -> list[list[int]]:
+    def valid_target(self, piece: Piece, movement: float) -> List[List[int]]:
         """Compute all reachable positions using Dijkstra's algorithm.
 
         Returns a 2D grid where each cell contains the movement cost to
@@ -746,7 +746,7 @@ class Board:
         :param movement: The available movement points.
         :type movement: float
         :returns: A width x height grid of movement costs (-1 = unreachable).
-        :rtype: list[list[int]]
+        :rtype: List[List[int]]
         """
         mask = [[-1 for _ in range(self.height)] for _ in range(self.width)]
         start = piece.position
@@ -791,7 +791,7 @@ class Board:
 
     def move_piece(
         self, piece: Piece, to: Point, movement: float
-    ) -> tuple[list[Point] | None, bool]:
+    ) -> Tuple[Optional[List[Point]], bool]:
         """Move a piece to a target position if reachable.
 
         :param piece: The piece to move.
@@ -802,7 +802,7 @@ class Board:
         :type movement: float
         :returns: A tuple of (path, success). Path is the list of waypoints
             on success, or None on failure.
-        :rtype: tuple[list[Point] | None, bool]
+        :rtype: Tuple[Optional[List[Point]], bool]
         """
         if not self.is_within_bounds(to):
             if self.if_log:
@@ -893,13 +893,13 @@ class Board:
         """
         return 0 <= point.x < self.width and 0 <= point.y < self.height
 
-    def get_neighbors(self, point: Point) -> list[Point]:
+    def get_neighbors(self, point: Point) -> List[Point]:
         """Return all walkable adjacent cells (4-directional).
 
         :param point: The centre position.
         :type point: Point
         :returns: List of neighbouring walkable Points.
-        :rtype: list[Point]
+        :rtype: List[Point]
         """
         candidates = [
             Point(point.x - 1, point.y),
@@ -915,7 +915,7 @@ class Board:
 
     def find_shortest_path(
         self, piece: Piece, start: Point, goal: Point, movement: float
-    ) -> tuple[list[Point] | None, float]:
+    ) -> Tuple[Optional[List[Point]], float]:
         """Find the shortest path from start to goal using Dijkstra.
 
         :param piece: The moving piece (unused, for signature compatibility).
@@ -927,10 +927,10 @@ class Board:
         :param movement: The movement budget.
         :type movement: float
         :returns: A tuple of (path, cost). Path is None if unreachable.
-        :rtype: tuple[list[Point] | None, float]
+        :rtype: Tuple[Optional[List[Point]], float]
         """
-        came_from: dict[tuple[int, int], tuple[int, int]] = {}
-        cost_so_far: dict[tuple[int, int], float] = {}
+        came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}
+        cost_so_far: Dict[Tuple[int, int], float] = {}
         frontier: PriorityQueue = PriorityQueue()
 
         frontier.put((0, (start.x, start.y)))
@@ -963,7 +963,7 @@ class Board:
         if goal_tuple not in came_from:
             return None, 0
 
-        path: list[Point] = []
+        path: List[Point] = []
         temp = goal_tuple
         start_tuple = (start.x, start.y)
         while temp != start_tuple:
@@ -1024,7 +1024,7 @@ class Board:
             line_index += 1
 
     def init_pieces_location(
-        self, player1_pieces: list[Piece], player2_pieces: list[Piece]
+        self, player1_pieces: List[Piece], player2_pieces: List[Piece]
     ) -> None:
         """Place both players' pieces on the board.
 
@@ -1032,9 +1032,9 @@ class Board:
         pieces are above the border.
 
         :param player1_pieces: List of player 1's pieces.
-        :type player1_pieces: list[Piece]
+        :type player1_pieces: List[Piece]
         :param player2_pieces: List of player 2's pieces.
-        :type player2_pieces: list[Piece]
+        :type player2_pieces: List[Piece]
         :raises ValueError: If any piece is on the wrong side.
         """
         for piece in player1_pieces:
@@ -1067,12 +1067,12 @@ class GameState:
 
     def __init__(self) -> None:
         self.action_queue: np.ndarray = np.array([], dtype=object)
-        self.current_piece: Piece | None = None
+        self.current_piece: Optional[Piece] = None
         self.round_number: int = 0
-        self.delayed_spells: list[Any] = []
-        self.player1: Player | None = None
-        self.player2: Player | None = None
-        self.board: Board | None = None
+        self.delayed_spells: List[Any] = []
+        self.player1: Optional[Player] = None
+        self.player2: Optional[Player] = None
+        self.board: Optional[Board] = None
         self.is_game_over: bool = False
         self.new_dead_this_round: np.ndarray = np.array([], dtype=object)
         self.last_round_dead_pieces: np.ndarray = np.array([], dtype=object)
@@ -1086,13 +1086,13 @@ class InitGameMessage:
     :param id: The player ID (1 or 2).
     :type id: int
     :param board: The game board.
-    :type board: Board | None
+    :type board: Optional[Board]
     """
 
     def __init__(self) -> None:
         self.piece_cnt: int = 0
         self.id: int = 0
-        self.board: Board | None = None
+        self.board: Optional[Board] = None
 
 
 class Environment:
@@ -1114,9 +1114,9 @@ class Environment:
         self.if_log: int = if_log
         self.input_manager: InputMethodManager = InputMethodManager(self)
         self.action_queue: np.ndarray = np.array([], dtype=object)
-        self.current_piece: Piece | None = None
+        self.current_piece: Optional[Piece] = None
         self.round_number: int = 0
-        self.delayed_spells: list[Any] = []
+        self.delayed_spells: List[Any] = []
         self.player1: Player = Player()
         self.player2: Player = Player()
         self.board: Board = Board(if_log=if_log)
@@ -1208,7 +1208,7 @@ class Environment:
         self.round_number = 0
         self.new_dead_this_round = np.array([], dtype=object)
 
-        piece_priority: dict[Piece, int] = {}
+        piece_priority: Dict[Piece, int] = {}
         for piece in self.player1.pieces:
             piece_priority[piece] = self.roll_dice(1, 10) + piece.dexterity
         for piece in self.player2.pieces:
@@ -1240,8 +1240,8 @@ class Environment:
             )
         piece_args_use = policy.piece_args[: Player.PIECE_CNT]
         player = self.player1 if player_id == 1 else self.player2
-        pieces_list: list[Piece] = []
-        occupied: list[tuple[int, int]] = []
+        pieces_list: List[Piece] = []
+        occupied: List[Tuple[int, int]] = []
 
         for idx, piece_arg in enumerate(piece_args_use):
             if piece_arg is None:
@@ -1439,13 +1439,13 @@ class Environment:
 
         attack_context.attacker.get_accessor().change_action_points_by(-1)
 
-    def get_available_spells(self, piece: Piece | None = None) -> list[Spell]:
+    def get_available_spells(self, piece: Optional[Piece] = None) -> List[Spell]:
         """Get the list of spells available to a piece.
 
         :param piece: The piece to query. Defaults to the current piece.
-        :type piece: Piece | None
+        :type piece: Optional[Piece]
         :returns: Available spells for the piece.
-        :rtype: list[Spell]
+        :rtype: List[Spell]
         """
         if piece is None:
             piece = self.current_piece
@@ -1456,8 +1456,8 @@ class Environment:
         return SpellFactory.get_available_spells(piece)
 
     def get_spell_targets(
-        self, spell: Spell, caster: Piece | None = None
-    ) -> list[Piece]:
+        self, spell: Spell, caster: Optional[Piece] = None
+    ) -> List[Piece]:
         """Get valid targets for a spell.
 
         Filters by range, effect type, and team alignment.
@@ -1465,9 +1465,9 @@ class Environment:
         :param spell: The spell to check.
         :type spell: Spell
         :param caster: The caster. Defaults to the current piece.
-        :type caster: Piece | None
+        :type caster: Optional[Piece]
         :returns: List of valid target pieces.
-        :rtype: list[Piece]
+        :rtype: List[Piece]
         """
         if caster is None:
             caster = self.current_piece
@@ -1475,7 +1475,7 @@ class Environment:
         if caster is None or not caster.is_alive:
             return []
 
-        targets: list[Piece] = []
+        targets: List[Piece] = []
         for piece in self.action_queue:
             if not piece.is_alive:
                 continue
@@ -1558,7 +1558,7 @@ class Environment:
                 self.logdata.add_spell(spell_context, self.board)
 
         else:
-            targets: list[Piece] = []
+            targets: List[Piece] = []
             for piece in self.action_queue:
                 if not piece.is_alive:
                     continue
@@ -1806,7 +1806,7 @@ class Environment:
     # Host-mode methods (used by Saiblo / external game engines)
     # ------------------------------------------------------------------
 
-    def init_board_only(self, board_file: str | None = None) -> None:
+    def init_board_only(self, board_file: Optional[str] = None) -> None:
         """Load only the board and empty players (no pieces).
 
         Used by the Saiblo entry point or external game engine to prepare
@@ -1814,7 +1814,7 @@ class Environment:
 
         :param board_file: Path to the board file. If None, uses the
             default ``BoardCase/case1.txt``.
-        :type board_file: str | None
+        :type board_file: Optional[str]
         """
         path = board_file
         if path is None:
@@ -1845,7 +1845,7 @@ class Environment:
         if self.player2.pieces is None or len(self.player2.pieces) == 0:
             raise ValueError("Player 2 pieces not configured.")
 
-        piece_priority: dict[Piece, int] = {}
+        piece_priority: Dict[Piece, int] = {}
         for piece in self.player1.pieces:
             piece_priority[piece] = self.roll_dice(1, 10) + piece.dexterity
         for piece in self.player2.pieces:
