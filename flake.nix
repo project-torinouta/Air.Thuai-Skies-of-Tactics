@@ -65,12 +65,12 @@
 
         documents = pkgs.writeShellApplication {
           name = "documents";
-          runtimeInputs = [ pkgs.typst ]
+          runtimeInputs = [ pkgs.typst ];
           text = ''
             mkdir -p build
             FAILED=0
             SUCCESS=0
-            find . -name "*.typ" -type f -print0 | while IFS= read -r -d "" file; do
+            while IFS= read -r -d "" file; do
               echo "Compiling $file..."
               filename=$(basename "$file" .typ)
               # Correct syntax: typst compile <INPUT> [OUTPUT]
@@ -81,7 +81,7 @@
                 echo "✗ Failed to compile: $file"
                 FAILED=$((FAILED + 1))
               fi
-            done
+            done < <(find . -name "*.typ" -type f -print0)
             echo ""
             echo "=== Compilation Summary ==="
             echo "Successful: $SUCCESS"
