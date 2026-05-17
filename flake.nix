@@ -56,9 +56,10 @@
             mkdir -p "''${OUT_DIR}"
 
             pushd "''${PROJECT_ROOT}/src" > /dev/null
+            touch "$timestamp"
             # Expand the array correctly using "''${exclude[@]}"
-            zip -r "''${OUT_DIR}/nightly-''${timestamp}.zip" . -x "''${exclude[@]}"
-            echo "→ Built ''${OUT_DIR}/nightly-''${timestamp}.zip"
+            zip -r "''${OUT_DIR}/nightly-latest.zip" . -x "''${exclude[@]}"
+            echo "→ Built ''${OUT_DIR}/nightly-latest.zip"
             popd > /dev/null
           '';
         };
@@ -100,6 +101,10 @@
             if ls build/ >/dev/null 2>&1; then
               rm -rf build
               echo "✅ Clean successfully"
+              if ls src/2* >/dev/null 2>&1; then
+                rm -f src/2*
+                echo "✅ Delete timestamp flag successfully"
+              fi
             else
               echo "❌ failed to clean because there are no matched files"
             fi
