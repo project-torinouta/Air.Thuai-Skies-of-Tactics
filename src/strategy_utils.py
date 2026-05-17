@@ -208,9 +208,13 @@ def step_with_action(env: Environment, action: ActionSet) -> None:
     if action:
         env.execute_player_action(action)
 
-    env.is_game_over = not any(
-        p.is_alive for p in env.player1.pieces
-    ) or not any(p.is_alive for p in env.player2.pieces)
+    env.current_piece = env.action_queue[0]
+
+    env.is_game_over = (
+        not any(p.is_alive for p in env.player1.pieces)
+        or not any(p.is_alive for p in env.player2.pieces)
+        or env.round_number >= env.max_rounds
+    )
 
     env.last_round_dead_pieces = np.array(env.new_dead_this_round, dtype=object)
     env.new_dead_this_round = np.array([], dtype=object)
@@ -231,6 +235,7 @@ def fork_environment(env: Environment) -> Environment:
 
     new_env.mode = env.mode
     new_env.round_number = env.round_number
+    new_env.max_rounds = env.max_rounds
     new_env.is_game_over = env.is_game_over
 
     if env.board:
