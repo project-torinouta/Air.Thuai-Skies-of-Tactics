@@ -1,3 +1,9 @@
+# Copyright 2026 saiblo platform <https://saiblo.net>
+#
+# This SDK copy is distributed from https://api.saiblo.net/api/games/56/download/,
+# All rights reserved by saiblo platform. All I modified is translating the
+# comment and document string from Chinese to English
+
 """JSON state serialisation and deserialisation for the THUAI9 protocol.
 
 Deserialises game state JSON (from the C#/Python game engine) into
@@ -12,11 +18,6 @@ from typing import Any
 import numpy as np
 
 from env import Board, Cell, Environment, Piece, Player, SpellContext
-# Copyright 2026 saiblo platform <https://saiblo.net>
-#
-# This SDK copy is distributed from https://api.saiblo.net/api/games/56/download/,
-# All rights reserved by saiblo platform. All I modified is translating the
-# comment and document string from Chinese to English
 
 from utils import Area, Point, SpellFactory, TargetType
 
