@@ -134,11 +134,11 @@ def _make_adjacent_env() -> Environment:
 
     p1 = _make_piece(
         team=1, pos=Point(5, 5), strength=24, dexterity=6,
-        intelligence=0, weapon=2, armor=1,
+        intelligence=12, weapon=2, armor=1,
     )
     p2 = _make_piece(
         team=2, pos=Point(5, 6), strength=24, dexterity=6,
-        intelligence=0, weapon=2, armor=1,
+        intelligence=12, weapon=2, armor=1,
     )
     p1.id = 0
     p2.id = 1
