@@ -21,6 +21,10 @@ from strategies.aggressive import (
     get_aggressive_init_strategy,
     get_aggressive_action_strategy,
 )
+from strategies.tactical import (
+    get_tactical_init_strategy,
+    get_tactical_action_strategy,
+)
 from utils import ActionSet
 
 ERROR_MAP = ["RE", "TLE", "OLE"]
@@ -61,7 +65,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="THUAI9 Saiblo Client")
     parser.add_argument(
         "--strategy",
-        choices=["aggressive", "defensive", "mcts"],
+        choices=["aggressive", "defensive", "mcts", "alpha_beta", "tactical"],
         default="aggressive",
         help="AI strategy to use (default: aggressive)",
     )
