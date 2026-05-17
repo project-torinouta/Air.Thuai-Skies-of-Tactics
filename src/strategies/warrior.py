@@ -101,6 +101,12 @@ def get_warrior_action_strategy() -> Callable[..., ActionSet]:
         action = ActionSet()
         current = env.current_piece
 
+        if current is None:
+            action.move = False
+            action.attack = False
+            action.spell = False
+            return action
+
         enemies = [
             p for p in env.action_queue
             if p.team != current.team and p.is_alive
@@ -181,6 +187,12 @@ def get_ranger_action_strategy() -> Callable[..., ActionSet]:
     def strategy(env: Environment) -> ActionSet:
         action = ActionSet()
         current = env.current_piece
+
+        if current is None:
+            action.move = False
+            action.attack = False
+            action.spell = False
+            return action
 
         enemies = [
             p for p in env.action_queue

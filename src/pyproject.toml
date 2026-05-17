@@ -1,6 +1,6 @@
 [project]
 name = "air-thuai-skies-of-tactics"
-version = "0.1.1"
+version = "0.1.2"
 description = "The project for THUAI-9 Skies of Tactics competition"
 readme = "README.md"
 requires-python = ">=3.12"

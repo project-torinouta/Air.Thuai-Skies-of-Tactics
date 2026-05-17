@@ -43,14 +43,33 @@ run defensive defensive random random "$ROUNDS_FAST"
 run random random aggressive aggressive "$ROUNDS_FAST"
 run random random defensive defensive "$ROUNDS_FAST"
 
-echo "=== MCTS (aggressive init) ===" >&2
-run aggressive mcts defensive defensive "$ROUNDS_SLOW"
-run aggressive mcts aggressive aggressive "$ROUNDS_SLOW"
-run aggressive mcts random random "$ROUNDS_SLOW"
+echo "=== Tactical ===" >&2
+run tactical tactical aggressive aggressive "$ROUNDS_FAST"
+run tactical tactical defensive defensive "$ROUNDS_FAST"
+run tactical tactical random random "$ROUNDS_FAST"
 
-echo "=== Alpha-Beta (aggressive init) ===" >&2
-run aggressive alpha_beta defensive defensive "$ROUNDS_SLOW"
-run aggressive alpha_beta aggressive aggressive "$ROUNDS_SLOW"
-run aggressive alpha_beta random random "$ROUNDS_SLOW"
+echo "=== Warrior ===" >&2
+run warrior warrior aggressive aggressive "$ROUNDS_FAST"
+run warrior warrior defensive defensive "$ROUNDS_FAST"
+run warrior warrior random random "$ROUNDS_FAST"
+
+echo "=== Ranger ===" >&2
+run ranger ranger aggressive aggressive "$ROUNDS_FAST"
+run ranger ranger defensive defensive "$ROUNDS_FAST"
+run ranger ranger random random "$ROUNDS_FAST"
+
+echo "=== Sniper ===" >&2
+run sniper sniper aggressive aggressive "$ROUNDS_FAST"
+run sniper sniper defensive defensive "$ROUNDS_FAST"
+run sniper sniper warrior warrior "$ROUNDS_FAST"
+run sniper sniper tactical tactical "$ROUNDS_FAST"
+run sniper sniper ranger ranger "$ROUNDS_FAST"
+run sniper sniper random random "$ROUNDS_FAST"
+
+echo "=== Cross ===" >&2
+run tactical tactical ranger ranger "$ROUNDS_FAST"
+run warrior warrior tactical tactical "$ROUNDS_FAST"
+run ranger ranger warrior warrior "$ROUNDS_FAST"
+run aggressive aggressive sniper sniper "$ROUNDS_FAST"
 
 echo "=== Done ===" >&2
