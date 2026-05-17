@@ -63,6 +63,35 @@
           '';
         };
 
+        documents = pkgs.writeShellApplication {
+          name = "documents";
+          text = ''
+            mkdir -p build
+            FAILED=0
+            SUCCESS=0
+            find . -name "*.typ" -type f -print0 | while IFS= read -r -d "" file; do
+              echo "Compiling $file..."
+              filename=$(basename "$file" .typ)
+              # Correct syntax: typst compile <INPUT> [OUTPUT]
+              if typst compile "$file" "build/''${filename}.pdf" 2>&1; then
+                echo "✓ Successfully compiled: $file"
+                SUCCESS=$((SUCCESS + 1))
+              else
+                echo "✗ Failed to compile: $file"
+                FAILED=$((FAILED + 1))
+              fi
+            done
+            echo ""
+            echo "=== Compilation Summary ==="
+            echo "Successful: $SUCCESS"
+            echo "Failed: $FAILED"
+            ls -la build/ || echo "No PDFs generated"
+            if [ $FAILED -gt 0 ]; then
+              echo "⚠️ Some Typst files failed to compile"
+            fi
+          '';
+        };
+
         clean = pkgs.writeShellApplication {
           name = "clean";
           text = ''
