@@ -60,6 +60,12 @@ from strategies.tactical import (
     get_tactical_action_strategy,
     get_tactical_init_strategy,
 )
+from strategies.warrior import (
+    get_warrior_action_strategy,
+    get_warrior_init_strategy,
+    get_ranger_action_strategy,
+    get_ranger_init_strategy,
+)
 from utils import ActionSet, PieceArg
 
 StrategyPair = Tuple[Callable[..., List[PieceArg]], Callable[..., ActionSet]]
@@ -70,6 +76,8 @@ STRATEGY_NAMES: List[str] = [
     "mcts",
     "alpha_beta",
     "tactical",
+    "warrior",
+    "ranger",
     "random",
 ]
 
@@ -77,6 +85,8 @@ INIT_NAMES: List[str] = [
     "aggressive",
     "defensive",
     "tactical",
+    "warrior",
+    "ranger",
     "random",
 ]
 
@@ -86,6 +96,8 @@ ACTION_NAMES: List[str] = [
     "mcts",
     "alpha_beta",
     "tactical",
+    "warrior",
+    "ranger",
     "random",
 ]
 
@@ -107,6 +119,10 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_defensive_init_strategy()
     if name == "tactical":
         return get_tactical_init_strategy()
+    if name == "warrior":
+        return get_warrior_init_strategy()
+    if name == "ranger":
+        return get_ranger_init_strategy()
     if name == "random":
         return get_random_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
@@ -140,6 +156,10 @@ def get_action_strategy(
         return get_alpha_beta_action_strategy(alpha_beta_depth)
     if name == "tactical":
         return get_tactical_action_strategy()
+    if name == "warrior":
+        return get_warrior_action_strategy()
+    if name == "ranger":
+        return get_ranger_action_strategy()
     if name == "random":
         return get_random_action_strategy()
     raise ValueError(f"Unknown action strategy: {name}")

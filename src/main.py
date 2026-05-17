@@ -17,13 +17,9 @@ import sys
 from env import Environment, InitGameMessage, Player
 from json_converter import action_to_dict, env_from_state_json
 from saiblo_client import SaibloClient
-from strategies.aggressive import (
-    get_aggressive_init_strategy,
-    get_aggressive_action_strategy,
-)
-from strategies.tactical import (
-    get_tactical_init_strategy,
-    get_tactical_action_strategy,
+from strategies.warrior import (
+    get_ranger_init_strategy,
+    get_ranger_action_strategy
 )
 from utils import ActionSet
 
@@ -93,8 +89,8 @@ def run() -> None:
     strategy invocation, and error reporting.
     """
 
-    action_strategy = get_aggressive_action_strategy()
-    init_strategy = get_aggressive_init_strategy()
+    action_strategy = get_ranger_action_strategy()
+    init_strategy = get_ranger_init_strategy()
 
     env = Environment(local_mode=False, if_log=0)
     env.init_board_only()
