@@ -105,18 +105,23 @@ and move.
 == When to Use
 
 Use the tactical strategy on open boards where the staff's range can be
-fully utilised. Effective against melee-focused opponents but vulnerable to
-other ranged builds with higher damage output (see ranger strategy).
+fully utilised. Moderately effective against melee opponents, but vulnerable
+to ranged builds with higher damage output (ranger, sniper).
 
 == Benchmark Performance
+
+Results from the standard 31-board benchmark (30 games per matchup, max 60
+rounds, seed 42).
 
 #figure(
   table(
     columns: (auto, auto, auto),
     [*Opponent*], [*Win rate*], [*Note*],
-    [Aggressive], [80%], [Outranges and kites effectively],
-    [Defensive], [100%], [Superior range and damage],
-    [Ranger], [20%], [Bow out-trades staff],
+    [Aggressive], [0%], [Cannot kite effectively on diverse boards],
+    [Defensive], [0%], [All draws — neither can kill the other],
+    [Random], [17%], [Mostly draws],
+    [Ranger], [0%], [Bow out-ranges and out-damages staff],
+    [Sniper], [0%], [Heavy armour ignores staff damage],
   ),
-  caption: [Benchmark results (10 games per matchup)],
+  caption: [Benchmark results],
 )

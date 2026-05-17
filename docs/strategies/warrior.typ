@@ -160,21 +160,25 @@ Key findings:
 
 == Benchmark Performance
 
+Results from the standard 31-board benchmark (30 games per matchup, max 60
+rounds, seed 42).
+
 #figure(
   table(
     columns: (auto, auto, auto),
     [*Matchup*], [*Win rate*], [*Note*],
-    [Warrior vs aggressive], [40%], [Short range limits effectiveness],
+    [Warrior vs aggressive], [0%], [Loses the 1v1 trade],
     [Warrior vs defensive], [100%], [Easily closes gap on kiter],
-    [Ranger vs aggressive], [80%], [Outranges and out-damages],
+    [Warrior vs tactical], [90%], [Overwhelms the mage before kiting],
+    [Ranger vs aggressive], [13%], [Range helps but armour gap is fatal],
     [Ranger vs defensive], [100%], [Superior reach and damage],
-    [Ranger vs tactical], [80%], [Bow damage overwhelms staff],
+    [Ranger vs tactical], [100%], [Bow damage overwhelms staff],
   ),
-  caption: [Benchmark results (5-10 games per matchup)],
+  caption: [Benchmark results],
 )
 
 == When to Use
 
 Use the *warrior* on dense boards with many obstacles where the short
-attack range is less of a liability. Use the *ranger* as a general-purpose
-strategy — it has the highest overall win rate across all tested opponents.
+attack range is less of a liability. For general-purpose play, consider the
+*sniper* strategy instead — it achieves a 100% win rate across all matchups.
