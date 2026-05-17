@@ -10,3 +10,7 @@
 **/BoardCase
 ## The build output directory
 **/build
+## The pdf output directory
+**/output
+## The pdf output of Typst document
+**/*.pdf
