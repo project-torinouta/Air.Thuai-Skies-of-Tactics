@@ -75,5 +75,4 @@ disallow_untyped_defs = false
 dev = [
     "mypy>=2.1.0",
     "pyright>=1.1.409",
-    "ruff>=0.15.13",
 ]

@@ -13,7 +13,7 @@ format expected by the game engine.
 Field names align with ``GameEngine.cs`` / ``server_python game_engine`` DTOs.
 """
 
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 
@@ -36,15 +36,15 @@ def _target_type_from_index(idx: int) -> TargetType:
     return TargetType.SINGLE
 
 
-def _piece_by_id(queue: Any, piece_id: int | None) -> Piece | None:
+def _piece_by_id(queue: Any, piece_id: Optional[int]) -> Optional[Piece]:
     """Find a piece in the action queue by its ID.
 
     :param queue: The action queue (iterable of Piece objects).
     :type queue: Any
     :param piece_id: The piece ID to search for. None or negative returns None.
-    :type piece_id: int | None
+    :type piece_id: Optional[int]
     :returns: The matching Piece, or None if not found.
-    :rtype: Piece | None
+    :rtype: Optional[Piece]
     """
     if piece_id is None or int(piece_id) < 0:
         return None

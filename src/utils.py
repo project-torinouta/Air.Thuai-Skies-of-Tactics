@@ -12,7 +12,7 @@ enumerations. All game-logic modules build upon these types.
 """
 
 from enum import Enum
-from typing import Any
+from typing import Any, List, Optional
 
 
 class Point:
@@ -42,9 +42,9 @@ class ActionSet:
     def __init__(self) -> None:
         self.move_target: Point = Point()
         self.attack: bool = False
-        self.attack_context: AttackContext | None = None
+        self.attack_context: Optional[AttackContext] = None
         self.spell: bool = False
-        self.spell_context: SpellContext | None = None
+        self.spell_context: Optional[SpellContext] = None
 
     def __str__(self) -> str:
         """Return a human-readable representation of this action set.
@@ -114,7 +114,7 @@ class InitializationSet:
         intelligence: int = 0,
         weapon: int = 0,
         armor: int = 0,
-        position: Point | None = None,
+        position: Optional[Point] = None,
     ) -> None:
         self.strength = strength
         self.dexterity = dexterity
@@ -175,7 +175,7 @@ class InitPolicyMessage:
     """Message carrying the initialisation policy for a player's pieces."""
 
     def __init__(self) -> None:
-        self.piece_args: list[PieceArg] = []
+        self.piece_args: List[PieceArg] = []
 
 
 class AttackContext:
@@ -186,9 +186,9 @@ class AttackContext:
     """
 
     def __init__(self) -> None:
-        self.attacker: Any | None = None  # Piece
-        self.target: Any | None = None  # Piece
-        self.attack_type: AttackType | None = None
+        self.attacker: Optional[Any] = None  # Piece
+        self.target: Optional[Any] = None  # Piece
+        self.attack_type: Optional[AttackType] = None
         self.is_critical: bool = False
         self.damage_dealt: int = 0
         self.is_hit: bool = False
@@ -216,15 +216,15 @@ class SpellContext:
     """
 
     def __init__(self) -> None:
-        self.caster: Any | None = None  # Piece
-        self.spell: Spell | None = None
+        self.caster: Optional[Any] = None  # Piece
+        self.spell: Optional[Spell] = None
         self.spell_power: int = 0
-        self.target_type: TargetType | None = None
-        self.target: Any | None = None  # Piece
-        self.target_area: Area | None = None
+        self.target_type: Optional[TargetType] = None
+        self.target: Optional[Any] = None  # Piece
+        self.target_area: Optional[Area] = None
         self.spell_range: float = 0.0
-        self.effect_type: SpellEffectType | None = None
-        self.damage_type: DamageType | None = None
+        self.effect_type: Optional[SpellEffectType] = None
+        self.damage_type: Optional[DamageType] = None
         self.damage_value: int = 0
         self.heal_value: int = 0
         self.effect_value: int = 0
@@ -308,9 +308,9 @@ class Spell:
     :param description: A brief description of the spell's effect.
     :type description: str
     :param effect_type: The category of effect this spell produces.
-    :type effect_type: SpellEffectType | None
+    :type effect_type: Optional[SpellEffectType]
     :param damage_type: The damage type, if applicable.
-    :type damage_type: DamageType | None
+    :type damage_type: Optional[DamageType]
     :param base_value: The base power or healing amount.
     :type base_value: int
     :param range_: The maximum casting range (Manhattan distance).
@@ -334,8 +334,8 @@ class Spell:
         id: int = 0,
         name: str = "",
         description: str = "",
-        effect_type: SpellEffectType | None = None,
-        damage_type: DamageType | None = None,
+        effect_type: Optional[SpellEffectType] = None,
+        damage_type: Optional[DamageType] = None,
         base_value: int = 0,
         range_: int = 0,
         area_radius: int = 0,
@@ -364,11 +364,11 @@ class SpellFactory:
     """Factory providing all available spell definitions."""
 
     @staticmethod
-    def get_all_spells() -> list[Spell]:
+    def get_all_spells() -> List[Spell]:
         """Return the full list of available spells.
 
         :returns: A list of all defined Spell objects.
-        :rtype: list[Spell]
+        :rtype: List[Spell]
         """
         return [
             Spell(
@@ -449,13 +449,13 @@ class SpellFactory:
         ]
 
     @staticmethod
-    def get_spell_by_id(spell_id: int) -> Spell | None:
+    def get_spell_by_id(spell_id: int) -> Optional[Spell]:
         """Look up a spell by its identifier.
 
         :param spell_id: The spell ID to search for.
         :type spell_id: int
         :returns: The matching Spell, or None if not found.
-        :rtype: Spell | None
+        :rtype: Optional[Spell]
         """
         return next(
             (spell for spell in SpellFactory.get_all_spells() if spell.id == spell_id),
@@ -463,7 +463,7 @@ class SpellFactory:
         )
 
     @staticmethod
-    def get_available_spells(piece: Any) -> list[Spell]:
+    def get_available_spells(piece: Any) -> List[Spell]:
         """Return the list of spells available to a given piece.
 
         Spells are filtered by piece type and capped by the piece's
@@ -472,10 +472,10 @@ class SpellFactory:
         :param piece: The piece whose available spells are queried.
         :type piece: Piece
         :returns: A list of spells the piece can cast.
-        :rtype: list[Spell]
+        :rtype: List[Spell]
         """
         all_spells = SpellFactory.get_all_spells()
-        available: list[Spell] = []
+        available: List[Spell] = []
 
         if piece.type == "Warrior":
             available.extend(

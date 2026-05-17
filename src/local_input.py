@@ -14,7 +14,7 @@ appropriate method per player.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from utils import ActionSet, Area, AttackContext, InitPolicyMessage, Point, SpellContext, SpellFactory
 
@@ -369,7 +369,7 @@ class ConsoleInputMethod(IInputMethod):
                         print(f"Casting range exceeded (max: {spell.range}).")
                         continue
 
-                    target: object | None = None
+                    target: Optional[object] = None
                     if not spell.is_area_effect:
                         print("Enter target piece ID:")
                         try:
