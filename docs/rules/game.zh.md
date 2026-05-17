@@ -88,16 +88,15 @@
 
 ### 初始化公式
 
-- `max_health = 30 + strength * 2`
+- `max_health = 50 + strength * 2`
 - `max_movement = dexterity + 0.5 * strength + 10`
 - `max_spell_slots`：按智力阈值分段确定（与
   `client/client/env.py`、`server_python/env.py` 一致）：
-  - `intelligence <= 3`：1
-  - `intelligence <= 7`：2
-  - `intelligence <= 12`：3
-  - `intelligence <= 16`：5
-  - `intelligence <= 21`：8
-  - `intelligence > 21`：9
+  - `intelligence <= 3`：0
+  - `intelligence <= 12`：1
+  - `intelligence <= 16`：2
+  - `intelligence <= 21`：3
+  - `intelligence > 21`：5
 
 ### 先手 / 行动顺序
 
@@ -134,20 +133,22 @@
 - 法术范围与目标区域判断使用曼哈顿距离。
 - `range_` 表示施法者到目标中心的最大曼哈顿距离。
 - `area_radius` 表示目标中心周围的曼哈顿半径影响范围。
-- 部分法术为延迟法术：
-  - `is_delay_spell=True` 时，法术进入 `delayed_spells` 队列，稍后执行。
-  - 延迟法术在入队时会消耗 1 点行动点和相应 `spell_cost`。
-- `is_locking_spell=True` 表示法术执行过程中可能锁定目标或施法者逻辑。
+- `is_locking_spell=True`（Arrow Hit、Teleport）：须指定 `target`，且目标位置须在
+  `target_area` 内。
+- 区域法术（Fireball、Heal）：须指定 `target_area` 落点中心，施法者到中心距离
+  ≤ `range_`；范围内无有效目标时仍可施放并消耗资源（如 Heal 空放）。
+- 法术伤害/治疗为**固定数值**，不经过物理/魔法抗性结算。
 
 ### 内置法术列表
 
 | ID  | 名称      | 术式类型 | 伤害类型 | 基础值 | 范围 | 区域半径 | 费用 | 说明                  |
 | --- | --------- | -------- | -------- | ------ | ---- | -------- | ---- | --------------------- |
-| 1   | Fireball  | DAMAGE   | FIRE     | 30     | 2    | 5        | 1    | 区域伤害              |
-| 2   | Heal      | HEAL     | NONE     | 30     | 2    | 4        | 1    | 目标恢复或中心恢复    |
-| 3   | Arrow Hit | DAMAGE   | PHYSICAL | 30     | 1    | 7        | 1    | 物理伤害              |
-| 4   | Trap      | DAMAGE   | PHYSICAL | 30     | 1    | 0        | 1    | 延迟效果，持续 2 回合 |
-| 5   | Teleport  | MOVE     | PHYSICAL | 30     | 100  | 100      | 1    | 远程传送              |
+| 1   | Fireball  | DAMAGE   | FIRE     | 10     | 4    | 2        | 1    | 区域伤害（仅敌方）    |
+| 2   | Heal      | HEAL     | NONE     | 15     | 4    | 1        | 1    | 区域治疗（仅友方，可空放） |
+| 3   | Arrow Hit | DAMAGE   | PHYSICAL | 10     | 7    | 1        | 1    | 锁定单体伤害          |
+| 5   | Teleport  | MOVE     | PHYSICAL | 30     | 100  | 100      | 1    | 传送至落点            |
+
+> **Trap（ID 4）** 当前版本已禁用。不在可用法术列表中。
 
 ### 各职业可用法术（按当前实现）
 
@@ -155,15 +156,13 @@
 `type`（Warrior/Mage/Archer）筛选可用法术，因此**不同职业可用法术集合不同**。以
 以上内置法术为例：
 
-- **Warrior（战士）**：所有 `DamageType=PHYSICAL` 的法术，以及 `BUFF` 类法术（若
-  未来加入）。
-  - 对应当前内置法术：`Arrow Hit`、`Trap`、`Teleport`
-- **Mage（法师）**：元素伤害（`FIRE/ICE/LIGHTNING`）法术，或效果类型为
-  `DAMAGE/DEBUFF` 的法术。
-  - 对应当前内置法术：`Fireball`、`Arrow Hit`、`Trap`
-- **Archer（弓箭手）**：名称为 `Arrow Hit` / `Trap` 的法术，或效果类型为 `MOVE`
-  的法术。
-  - 对应当前内置法术：`Arrow Hit`、`Trap`、`Teleport`
+- **Warrior（战士）**：`PHYSICAL` 伤害或 `BUFF` 效果类法术。
+  - 对应当前内置法术：`Arrow Hit`、`Teleport`
+- **Mage（法师）**：元素伤害（`FIRE/ICE/LIGHTNING`），或效果类型为
+  `DAMAGE` / `HEAL` / `DEBUFF` 的法术。
+  - 对应当前内置法术：`Fireball`、`Arrow Hit`、`Heal`
+- **Archer（弓箭手）**：名称为 `Arrow Hit` 的法术，或效果类型为 `MOVE` 的法术。
+  - 对应当前内置法术：`Arrow Hit`、`Teleport`
 
 > 注：当前实现**没有**“同一种法术整局只能释放一次”的限制。只要行动点/法术位与目
 > 标合法性满足，允许在不同回合反复释放同一个法术，直到 `spell_slots` 耗尽。
