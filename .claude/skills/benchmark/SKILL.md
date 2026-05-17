@@ -39,25 +39,25 @@ cd src
 ### Single Matchup
 
 ```bash
-uv run python benchmark.py --p1 <strategy> --p2 <strategy> --rounds <N> [options]
+uv run benchmark.py --p1 <strategy> --p2 <strategy> --rounds <N> [options]
 ```
 
 Example:
 
 ```bash
-uv run python benchmark.py --p1 aggressive --p2 defensive --rounds 50
+uv run benchmark.py --p1 aggressive --p2 defensive --rounds 50
 ```
 
 ### Round-robin (all vs all)
 
 ```bash
-uv run python benchmark.py --rounds <N> [options]
+uv run benchmark.py --rounds <N> [options]
 ```
 
 ### With Random Boards
 
 ```bash
-uv run python benchmark.py --p1 aggressive --p2 defensive --rounds 50 \
+uv run benchmark.py --p1 aggressive --p2 defensive --rounds 50 \
     --generate-boards 10 --board-rows 16 --board-cols 16 --obstacle-density 0.12
 ```
 
