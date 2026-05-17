@@ -1,4 +1,13 @@
-# THUAI9 苍穹棋域 — Skies of Tactics
+<div align="center">
+  <img src="assets/banner.png" />
+  <h1>THUAI-9: Skies of Tactics</h1>
+
+[![build](https://img.shields.io/github/actions/workflow/status/project-torinouta/Air.Thuai-Skies-of-Tactics/nightly.yml?label=nightly)](https://github.com/AshGreyG/Obsino/actions/workflows/nightly.yml)
+[![Typst](https://img.shields.io/badge/Typst-239DAD?logo=typst&logoColor=fff)](https://typst.app/)
+[![Nix](https://img.shields.io/badge/Nix-5277C3?logo=nixos&logoColor=fff)](https://nixos.org/)
+[![MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+</div>
 
 A turn-based grid strategy game where AI-controlled pieces compete in tactical
 combat. Contestants write Python strategies (initialization + per-turn actions)
