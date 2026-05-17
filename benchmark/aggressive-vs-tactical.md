@@ -1,5 +1,5 @@
 ```plaintext
-❯ uv run benchmark.py --rounds 10 --p1 aggressive --p2 tactical --rounds 1000
+❯ uv run benchmark.py --p1 aggressive --p2 tactical --rounds 1000
 THUAI9 Strategy Benchmark
 Board: ./BoardCase/case1.txt
 Games per matchup: 1000
