@@ -1,0 +1,11 @@
+# Python cache and environments
+
+**/.venv
+**/__pycache__
+
+# Project specific directories
+
+## The board file
+**/BoardCase
+## The build output directory
+**/build
