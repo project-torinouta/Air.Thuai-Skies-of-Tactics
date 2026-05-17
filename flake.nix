@@ -65,6 +65,7 @@
 
         documents = pkgs.writeShellApplication {
           name = "documents";
+          runtimeInputs = [ pkgs.typst ]
           text = ''
             mkdir -p build
             FAILED=0
