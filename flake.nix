@@ -16,9 +16,6 @@
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#
-# This is the header of every handbook, you can add predefined functions or
-# styles here.
 
 {
   description = "The project repo of THUAI-9 Skies of Tactics competition";
@@ -27,16 +24,44 @@
 
   outputs = { self, nixpkgs }:
     let
-      # Define the systems you want to support
       allSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-      # A helper function to generate the shell for each system
       forAllSystems = f: nixpkgs.lib.genAttrs allSystems (system: f {
         pkgs = import nixpkgs { inherit system; };
       });
     in
     {
       packages = forAllSystems ({ pkgs }: {
-        # Waiting for running scripts
+        build = pkgs.writeShellApplication {
+          name = "build";
+          runtimeInputs = [ pkgs.zip ];
+          text = ''
+            # Capture the project root path cleanly before jumping directories
+            PROJECT_ROOT="''$(pwd)"
+            OUT_DIR="''${PROJECT_ROOT}/build"
+
+            echo "→ output directory is ''${OUT_DIR}"
+
+            exclude=(
+              "__pycache__/*"
+              ".mypy_cache/*"
+              ".ruff_cache/*"
+              ".venv/*"
+              "*/__pycache__/*"
+              "*/.mypy_cache/*"
+              "*/.ruff_cache/*"
+              "*/.venv/*"
+            )
+            set -eu
+            timestamp=''$(date +%Y%m%d-%H%M%S)
+            mkdir -p "''${OUT_DIR}"
+
+            pushd "''${PROJECT_ROOT}/src" > /dev/null
+            # Expand the array correctly using "''${exclude[@]}"
+            zip -r "''${OUT_DIR}/nightly-''${timestamp}.zip" . -x "''${exclude[@]}"
+            echo "→ Built ''${OUT_DIR}/nightly-''${timestamp}.zip"
+            popd > /dev/null
+          '';
+        };
       });
       devShells = forAllSystems ({ pkgs }: {
         default = pkgs.mkShell {
