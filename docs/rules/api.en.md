@@ -43,10 +43,12 @@ cd client/client
 python local_client.py --mode local --board ./BoardCase/case1.txt
 ```
 
-**Parameters:** | Parameter | Description | Options | Default | | --------- |
------------- | ----------------------- | ----------------------- | | `--mode` |
-Run mode | `local` / `function` | `local` | | `--board` | Board file path | Any
-valid path | `./BoardCase/case1.txt` |
+**Parameters:**
+
+| Parameter | Description     | Options              | Default                 |
+| --------- | --------------- | -------------------- | ----------------------- |
+| `--mode`  | Run mode        | `local` / `function` | `local`                 |
+| `--board` | Board file path | Any valid path       | `./BoardCase/case1.txt` |
 
 #### Method 2: AI Battle (Test Your Strategy)
 
@@ -57,11 +59,13 @@ python local_client.py --mode function --strategy defensive
 python local_client.py --mode function --strategy mcts --mcts-simulations 25
 ```
 
-**Parameters:** | Parameter | Description | Options | Default | |
--------------------- | ------------- | ----------------------------------- |
-------------- | | `--mode` | Run mode | `function` | - | | `--strategy` | AI
-strategy type | `aggressive` / `defensive` / `mcts` | `aggressive` | |
-`--mcts-simulations` | MCTS simulation count | Positive integer | 25 |
+**Parameters:**
+
+| Parameter            | Description           | Options                             | Default      |
+| -------------------- | --------------------- | ----------------------------------- | ------------ |
+| `--mode`             | Run mode              | `function`                          | -            |
+| `--strategy`         | AI strategy type      | `aggressive` / `defensive` / `mcts` | `aggressive` |
+| `--mcts-simulations` | MCTS simulation count | Positive integer                    | 25           |
 
 ### 0.3 Files Contestants Need to Modify
 

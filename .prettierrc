@@ -4,8 +4,8 @@
     {
       "files": ["*.md", "**/*.md", "*.typ", "**/*.typ"],
       "options": {
-        "proseWrap": "always",
-        "printWidth":80
+        "proseWrap": "preserve",
+        "printWidth": 120
       }
     }
   ]
