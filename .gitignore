@@ -3,6 +3,7 @@
 **/.venv
 **/__pycache__
 **/.ruff_cache
+**/.mypy_cache
 
 # Project specific directories
 
@@ -10,3 +11,5 @@
 **/BoardCase
 ## The build output directory
 **/build
+## The pdf output of Typst document
+**/*.pdf

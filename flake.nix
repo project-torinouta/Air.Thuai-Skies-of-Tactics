@@ -16,9 +16,6 @@
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#
-# This is the header of every handbook, you can add predefined functions or
-# styles here.
 
 {
   description = "The project repo of THUAI-9 Skies of Tactics competition";
@@ -27,16 +24,87 @@
 
   outputs = { self, nixpkgs }:
     let
-      # Define the systems you want to support
       allSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-      # A helper function to generate the shell for each system
       forAllSystems = f: nixpkgs.lib.genAttrs allSystems (system: f {
         pkgs = import nixpkgs { inherit system; };
       });
     in
     {
       packages = forAllSystems ({ pkgs }: {
-        # Waiting for running scripts
+        build = pkgs.writeShellApplication {
+          name = "build";
+          runtimeInputs = [ pkgs.zip ];
+          text = ''
+            # Capture the project root path cleanly before jumping directories
+            PROJECT_ROOT="''$(pwd)"
+            OUT_DIR="''${PROJECT_ROOT}/build"
+
+            echo "→ output directory is ''${OUT_DIR}"
+
+            exclude=(
+              "__pycache__/*"
+              ".mypy_cache/*"
+              ".ruff_cache/*"
+              ".venv/*"
+              "*/__pycache__/*"
+              "*/.mypy_cache/*"
+              "*/.ruff_cache/*"
+              "*/.venv/*"
+            )
+            set -eu
+            timestamp=''$(date +%Y%m%d-%H%M%S)
+            mkdir -p "''${OUT_DIR}"
+
+            pushd "''${PROJECT_ROOT}/src" > /dev/null
+            # Expand the array correctly using "''${exclude[@]}"
+            zip -r "''${OUT_DIR}/nightly-''${timestamp}.zip" . -x "''${exclude[@]}"
+            echo "→ Built ''${OUT_DIR}/nightly-''${timestamp}.zip"
+            popd > /dev/null
+          '';
+        };
+
+        documents = pkgs.writeShellApplication {
+          name = "documents";
+          runtimeInputs = [ pkgs.typst ];
+          text = ''
+            mkdir -p build
+            FAILED=0
+            SUCCESS=0
+            while IFS= read -r -d "" file; do
+              echo "Compiling $file..."
+              filename=$(basename "$file" .typ)
+              # Correct syntax: typst compile <INPUT> [OUTPUT]
+              if typst compile "$file" "build/''${filename}.pdf" 2>&1; then
+                echo "✓ Successfully compiled: $file"
+                SUCCESS=$((SUCCESS + 1))
+              else
+                echo "✗ Failed to compile: $file"
+                FAILED=$((FAILED + 1))
+              fi
+            done < <(find . -name "*.typ" -type f -print0)
+            echo ""
+            echo "=== Compilation Summary ==="
+            echo "Successful: $SUCCESS"
+            echo "Failed: $FAILED"
+            ls -la build/ || echo "No PDFs generated"
+            if [ $FAILED -gt 0 ]; then
+              echo "⚠️ Some Typst files failed to compile"
+            fi
+          '';
+        };
+
+        clean = pkgs.writeShellApplication {
+          name = "clean";
+          text = ''
+            echo "→ Cleaning up build directory"
+            if ls build/ >/dev/null 2>&1; then
+              rm -rf build
+              echo "✅ Clean successfully"
+            else
+              echo "❌ failed to clean because there are no matched files"
+            fi
+          '';
+        };
       });
       devShells = forAllSystems ({ pkgs }: {
         default = pkgs.mkShell {
