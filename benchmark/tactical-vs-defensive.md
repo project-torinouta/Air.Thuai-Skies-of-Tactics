@@ -5,13 +5,13 @@ Games per matchup: 30
 Max in-game rounds: 60
 Random seed: 42
 
-Matchup: ranger (P1) vs aggressive (P2)
-  Init: P1=ranger, P2=aggressive
-  Action: P1=ranger, P2=aggressive
+Matchup: tactical (P1) vs defensive (P2)
+  Init: P1=tactical, P2=defensive
+  Action: P1=tactical, P2=defensive
 Progress: ..............................
 ==============================================================================
 Matchup                         P1 Wins  P2 Wins  Draws  P1 Win%
 ------------------------------------------------------------------------------
-ranger vs aggressive                 26        4      0    86.7%
+tactical vs defensive                 6        0     24    20.0%
 ==============================================================================
 ```

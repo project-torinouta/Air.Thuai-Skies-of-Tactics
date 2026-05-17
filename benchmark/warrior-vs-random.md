@@ -5,13 +5,13 @@ Games per matchup: 30
 Max in-game rounds: 60
 Random seed: 42
 
-Matchup: ranger (P1) vs aggressive (P2)
-  Init: P1=ranger, P2=aggressive
-  Action: P1=ranger, P2=aggressive
+Matchup: warrior (P1) vs random (P2)
+  Init: P1=warrior, P2=random
+  Action: P1=warrior, P2=random
 Progress: ..............................
 ==============================================================================
 Matchup                         P1 Wins  P2 Wins  Draws  P1 Win%
 ------------------------------------------------------------------------------
-ranger vs aggressive                 26        4      0    86.7%
+warrior vs random                    30        0      0   100.0%
 ==============================================================================
 ```
