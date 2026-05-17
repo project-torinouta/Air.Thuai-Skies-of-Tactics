@@ -22,11 +22,13 @@
 from typing import Callable, List, Optional, Tuple
 
 from env import Environment
+from strategies._utils import calculate_distance
 from strategy_utils import (
     fork_environment,
     get_attackable_targets,
     get_legal_moves,
     get_state_score,
+    step_with_action,
 )
 from utils import (
     ActionSet,
@@ -38,6 +40,48 @@ from utils import (
     SpellEffectType,
     DamageType,
 )
+
+_MAX_MOVES_PER_NODE: int = 20
+
+
+def _sample_moves(
+    env: Environment, legal_moves: List[Point]
+) -> List[Optional[Point]]:
+    """Pick a subset of legal moves for the search node.
+
+    Always includes the current position and the closest
+    ``_MAX_MOVES_PER_NODE`` positions to the nearest enemy.
+
+    :param env: The game environment.
+    :type env: Environment
+    :param legal_moves: All reachable positions.
+    :type legal_moves: List[Point]
+    :returns: ``[None, move_1, ...]``.
+    :rtype: List[Optional[Point]]
+    """
+    if len(legal_moves) <= _MAX_MOVES_PER_NODE:
+        return [None] + legal_moves
+    current = env.current_piece
+    if current is None:
+        return [None] + legal_moves[:_MAX_MOVES_PER_NODE]
+    target_enemy = None
+    nearest = float("inf")
+    for p in env.action_queue:
+        if p.is_alive and p.team != current.team:
+            d = calculate_distance(current.position, p.position)
+            if d < nearest:
+                nearest = d
+                target_enemy = p
+    if target_enemy is None:
+        return [None] + legal_moves[:_MAX_MOVES_PER_NODE]
+    sorted_moves = sorted(
+        legal_moves,
+        key=lambda m: (
+            0 if m == current.position
+            else calculate_distance(m, target_enemy.position)
+        ),
+    )
+    return [None] + sorted_moves[:_MAX_MOVES_PER_NODE]
 
 
 def get_alpha_beta_action_strategy(
@@ -58,16 +102,22 @@ def get_alpha_beta_action_strategy(
         alpha: float,
         beta: float,
         maximizing: bool,
+        root_team: int,
     ) -> Tuple[float, Optional[ActionSet]]:
         if depth == 0 or env.is_game_over:
-            return get_state_score(env), None
+            score = get_state_score(env)
+            if env.current_piece is not None and env.current_piece.team != root_team:
+                score = -score
+            return score, None
 
         current_piece = env.current_piece
+        if current_piece is None:
+            return get_state_score(env), None
 
         if maximizing:
-            return _maximize(env, current_piece, depth, alpha, beta)
+            return _maximize(env, current_piece, depth, alpha, beta, root_team)
         else:
-            return _minimize(env, current_piece, depth, alpha, beta)
+            return _minimize(env, current_piece, depth, alpha, beta, root_team)
 
     def _maximize(
         env: Environment,
@@ -75,6 +125,7 @@ def get_alpha_beta_action_strategy(
         depth: int,
         alpha: float,
         beta: float,
+        root_team: int,
     ) -> Tuple[float, Optional[ActionSet]]:
         max_eval = float("-inf")
         best_action = None
@@ -85,7 +136,7 @@ def get_alpha_beta_action_strategy(
             env.get_available_spells(current_piece) if depth > 0 else []
         )
 
-        for move in ([None] + legal_moves) if legal_moves is not None else [None]:
+        for move in _sample_moves(env, legal_moves) if legal_moves else [None]:
             if move is not None and current_piece.action_points <= 0:
                 continue
             targets = [None] + attackable_targets if attackable_targets else [None]
@@ -137,9 +188,9 @@ def get_alpha_beta_action_strategy(
                     else:
                         action.spell = False
 
-                    next_env.execute_player_action(action)
+                    step_with_action(next_env, action)
                     eval_score, _ = _alpha_beta(
-                        next_env, depth - 1, alpha, beta, False
+                        next_env, depth - 1, alpha, beta, False, root_team
                     )
                     if eval_score > max_eval:
                         max_eval = eval_score
@@ -160,6 +211,7 @@ def get_alpha_beta_action_strategy(
         depth: int,
         alpha: float,
         beta: float,
+        root_team: int,
     ) -> Tuple[float, Optional[ActionSet]]:
         min_eval = float("inf")
         best_action = None
@@ -167,16 +219,9 @@ def get_alpha_beta_action_strategy(
         legal_moves = get_legal_moves(env)
         attackable_targets = get_attackable_targets(env)
 
-        base_spells: List[Spell] = []
-        if current_piece.spell_slots > 0:
-            base_spells = [
-                Spell(0, "Damage", "", SpellEffectType.DAMAGE, DamageType.PHYSICAL, 10),
-                Spell(0, "Heal", "", SpellEffectType.HEAL, DamageType.NONE, 8),
-                Spell(0, "Buff", "", SpellEffectType.BUFF, DamageType.NONE, 5),
-                Spell(0, "Debuff", "", SpellEffectType.DEBUFF, DamageType.NONE, 3),
-            ]
+        base_spells: List[Spell] = env.get_available_spells(current_piece)
 
-        moves = [None] + legal_moves if legal_moves else [None]
+        moves = _sample_moves(env, legal_moves) if legal_moves else [None]
         for move in moves:
             if move is not None and current_piece.action_points <= 0:
                 continue
@@ -256,9 +301,9 @@ def get_alpha_beta_action_strategy(
                     else:
                         action.spell = False
 
-                    next_env.execute_player_action(action)
+                    step_with_action(next_env, action)
                     eval_score, _ = _alpha_beta(
-                        next_env, depth - 1, alpha, beta, True
+                        next_env, depth - 1, alpha, beta, True, root_team
                     )
                     if eval_score < min_eval:
                         min_eval = eval_score
@@ -274,8 +319,9 @@ def get_alpha_beta_action_strategy(
         return min_eval, best_action
 
     def strategy(env: Environment) -> ActionSet:
+        root_team = env.current_piece.team if env.current_piece is not None else 1
         _, best_action = _alpha_beta(
-            env, max_depth, float("-inf"), float("inf"), True
+            env, max_depth, float("-inf"), float("inf"), True, root_team
         )
         return best_action if best_action is not None else ActionSet()
 

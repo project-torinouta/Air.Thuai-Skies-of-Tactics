@@ -1694,6 +1694,7 @@ class Environment:
         self.is_game_over = (
             not any(p.is_alive for p in self.player1.pieces)
             or not any(p.is_alive for p in self.player2.pieces)
+            or self.round_number >= self.max_rounds
         )
 
         if self.is_game_over and self.if_log:

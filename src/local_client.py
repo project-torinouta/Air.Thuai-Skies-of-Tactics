@@ -22,6 +22,7 @@ from strategies.defensive import (
     get_defensive_init_strategy,
     get_defensive_action_strategy,
 )
+from strategies.alpha_beta import get_alpha_beta_action_strategy
 from strategies.mcts import get_mcts_action_strategy
 
 
@@ -50,7 +51,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--strategy",
         type=str,
-        choices=["aggressive", "defensive", "mcts"],
+        choices=["aggressive", "defensive", "mcts", "alpha_beta"],
         default="aggressive",
         help="AI strategy to use in function mode",
     )
@@ -59,6 +60,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=25,
         help="MCTS simulation count when strategy=mcts",
+    )
+    parser.add_argument(
+        "--alpha-beta-depth",
+        type=int,
+        default=3,
+        help="Alpha-beta search depth when strategy=alpha_beta",
     )
     return parser.parse_args()
 
@@ -80,6 +87,11 @@ def _strategies_for(args: argparse.Namespace):
         return (
             get_defensive_init_strategy(),
             get_defensive_action_strategy(),
+        )
+    if args.strategy == "alpha_beta":
+        return (
+            get_defensive_init_strategy(),
+            get_alpha_beta_action_strategy(args.alpha_beta_depth),
         )
     init_s = get_defensive_init_strategy()
     action_s = get_mcts_action_strategy(args.mcts_simulations)
