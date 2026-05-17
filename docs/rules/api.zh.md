@@ -1007,12 +1007,12 @@ available_spells = SpellFactory.get_available_spells(piece: Piece) -> List[Spell
 
 ### 9.3 内置法术列表
 
-| ID  | 名称      | 效果类型 | 伤害类型 | 基础值 | 范围 | 区域半径 | 消耗 | 说明 |
-| --- | --------- | -------- | -------- | ------ | ---- | -------- | ---- | ---- |
-| 1   | Fireball  | DAMAGE   | FIRE     | 10     | 4    | 2        | 1    | 区域伤害（仅敌方） |
+| ID  | 名称      | 效果类型 | 伤害类型 | 基础值 | 范围 | 区域半径 | 消耗 | 说明                       |
+| --- | --------- | -------- | -------- | ------ | ---- | -------- | ---- | -------------------------- |
+| 1   | Fireball  | DAMAGE   | FIRE     | 10     | 4    | 2        | 1    | 区域伤害（仅敌方）         |
 | 2   | Heal      | HEAL     | NONE     | 15     | 4    | 1        | 1    | 区域治疗（仅友方，可空放） |
-| 3   | Arrow Hit | DAMAGE   | PHYSICAL | 10     | 7    | 1        | 1    | 锁定单体伤害 |
-| 5   | Teleport  | MOVE     | PHYSICAL | 30     | 100  | 100      | 1    | 传送至落点 |
+| 3   | Arrow Hit | DAMAGE   | PHYSICAL | 10     | 7    | 1        | 1    | 锁定单体伤害               |
+| 5   | Teleport  | MOVE     | PHYSICAL | 30     | 100  | 100      | 1    | 传送至落点                 |
 
 > **Trap（ID 4）** 当前版本已禁用，不在 `SpellFactory.get_all_spells()` 中。
 

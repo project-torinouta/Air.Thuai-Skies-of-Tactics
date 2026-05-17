@@ -166,12 +166,12 @@ Each piece has the following core attributes:
 
 ### Built-in Spell List
 
-| ID  | Name      | Effect Type | Damage Type | Base Value | Range | Area Radius | Cost | Description                        |
-| --- | --------- | ----------- | ----------- | ---------- | ----- | ----------- | ---- | ---------------------------------- |
-| 1   | Fireball  | DAMAGE      | FIRE        | 10         | 4     | 2           | 1    | Area damage (enemy only)           |
-| 2   | Heal      | HEAL        | NONE        | 15         | 4     | 1           | 1    | Area heal (ally only, can be empty)|
-| 3   | Arrow Hit | DAMAGE      | PHYSICAL    | 10         | 7     | 1           | 1    | Locking single-target damage       |
-| 5   | Teleport  | MOVE        | PHYSICAL    | 30         | 100   | 100         | 1    | Teleport to target location        |
+| ID  | Name      | Effect Type | Damage Type | Base Value | Range | Area Radius | Cost | Description                         |
+| --- | --------- | ----------- | ----------- | ---------- | ----- | ----------- | ---- | ----------------------------------- |
+| 1   | Fireball  | DAMAGE      | FIRE        | 10         | 4     | 2           | 1    | Area damage (enemy only)            |
+| 2   | Heal      | HEAL        | NONE        | 15         | 4     | 1           | 1    | Area heal (ally only, can be empty) |
+| 3   | Arrow Hit | DAMAGE      | PHYSICAL    | 10         | 7     | 1           | 1    | Locking single-target damage        |
+| 5   | Teleport  | MOVE        | PHYSICAL    | 30         | 100   | 100         | 1    | Teleport to target location         |
 
 > **Trap (ID 4)** is disabled in the current version and is not in the available
 > spell list.
