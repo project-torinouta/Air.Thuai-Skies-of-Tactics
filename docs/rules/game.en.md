@@ -106,16 +106,15 @@ Each piece has the following core attributes:
 
 ### Initialization Formulas
 
-- `max_health = 30 + strength * 2`
+- `max_health = 50 + strength * 2`
 - `max_movement = dexterity + 0.5 * strength + 10`
 - `max_spell_slots`: Determined by intelligence thresholds (consistent with
   `client/client/env.py` and `server_python/env.py`):
-  - `intelligence <= 3`: 1
-  - `intelligence <= 7`: 2
-  - `intelligence <= 12`: 3
-  - `intelligence <= 16`: 5
-  - `intelligence <= 21`: 8
-  - `intelligence > 21`: 9
+  - `intelligence <= 3`: 0
+  - `intelligence <= 12`: 1
+  - `intelligence <= 16`: 2
+  - `intelligence <= 21`: 3
+  - `intelligence > 21`: 5
 
 ### Initiative / Action Order
 
@@ -156,23 +155,26 @@ Each piece has the following core attributes:
   target center.
 - `area_radius` indicates the Manhattan radius of effect around the target
   center.
-- Some spells are delayed spells:
-  - When `is_delay_spell=True`, the spell enters the `delayed_spells` queue and
-    is executed later.
-  - Delayed spells consume 1 action point and the corresponding `spell_cost`
-    when enqueued.
-- `is_locking_spell=True` indicates that the spell may lock the target or caster
-  logic during execution.
+- `is_locking_spell=True` (Arrow Hit, Teleport): requires a `target`, and the
+  target position must be within the `target_area`.
+- Area spells (Fireball, Heal): require specifying a `target_area` centre; the
+  distance from the caster to the centre must be ≤ `range_`; can still be cast
+  and consume resources even if there are no valid targets (e.g., Heal on empty
+  area).
+- Spell damage/healing is a **fixed value** and does not go through
+  physical/magic resistance calculation.
 
 ### Built-in Spell List
 
-| ID  | Name      | Effect Type | Damage Type | Base Value | Range | Area Radius | Cost | Description                    |
-| --- | --------- | ----------- | ----------- | ---------- | ----- | ----------- | ---- | ------------------------------ |
-| 1   | Fireball  | DAMAGE      | FIRE        | 30         | 2     | 5           | 1    | Area damage                    |
-| 2   | Heal      | HEAL        | NONE        | 30         | 2     | 4           | 1    | Target or center heal          |
-| 3   | Arrow Hit | DAMAGE      | PHYSICAL    | 30         | 1     | 7           | 1    | Physical damage                |
-| 4   | Trap      | DAMAGE      | PHYSICAL    | 30         | 1     | 0           | 1    | Delayed effect, lasts 2 rounds |
-| 5   | Teleport  | MOVE        | PHYSICAL    | 30         | 100   | 100         | 1    | Long-range teleport            |
+| ID  | Name      | Effect Type | Damage Type | Base Value | Range | Area Radius | Cost | Description                         |
+| --- | --------- | ----------- | ----------- | ---------- | ----- | ----------- | ---- | ----------------------------------- |
+| 1   | Fireball  | DAMAGE      | FIRE        | 10         | 4     | 2           | 1    | Area damage (enemy only)            |
+| 2   | Heal      | HEAL        | NONE        | 15         | 4     | 1           | 1    | Area heal (ally only, can be empty) |
+| 3   | Arrow Hit | DAMAGE      | PHYSICAL    | 10         | 7     | 1           | 1    | Locking single-target damage        |
+| 5   | Teleport  | MOVE        | PHYSICAL    | 30         | 100   | 100         | 1    | Teleport to target location         |
+
+> **Trap (ID 4)** is disabled in the current version and is not in the available
+> spell list.
 
 ### Available Spells by Class (per current implementation)
 
@@ -181,15 +183,13 @@ available spells based on the piece's `type` (Warrior/Mage/Archer), meaning
 **different classes have different sets of available spells**. Using the
 built-in spells above as examples:
 
-- **Warrior**: All spells with `DamageType=PHYSICAL`, as well as `BUFF`-type
-  spells (if added in the future).
-  - Corresponding to current built-in spells: `Arrow Hit`, `Trap`, `Teleport`
-- **Mage**: Elemental damage (`FIRE/ICE/LIGHTNING`) spells, or spells with
-  effect type `DAMAGE/DEBUFF`.
-  - Corresponding to current built-in spells: `Fireball`, `Arrow Hit`, `Trap`
-- **Archer**: Spells named `Arrow Hit` / `Trap`, or spells with effect type
-  `MOVE`.
-  - Corresponding to current built-in spells: `Arrow Hit`, `Trap`, `Teleport`
+- **Warrior**: Spells with `DamageType=PHYSICAL` or effect type `BUFF`.
+  - Corresponding to current built-in spells: `Arrow Hit`, `Teleport`
+- **Mage**: Elemental damage (`FIRE/ICE/LIGHTNING`), or spells with effect type
+  `DAMAGE` / `HEAL` / `DEBUFF`.
+  - Corresponding to current built-in spells: `Fireball`, `Arrow Hit`, `Heal`
+- **Archer**: Spells named `Arrow Hit`, or spells with effect type `MOVE`.
+  - Corresponding to current built-in spells: `Arrow Hit`, `Teleport`
 
 > Note: The current implementation **does not have a "can only cast the same
 > spell once per game" restriction**. As long as action points, spell slots, and

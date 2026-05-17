@@ -1017,13 +1017,15 @@ available_spells = SpellFactory.get_available_spells(piece: Piece) -> List[Spell
 
 ### 9.3 Built-in Spell List
 
-| ID  | Name      | Effect Type | Damage Type | Base Value | Range | Cost |
-| --- | --------- | ----------- | ----------- | ---------- | ----- | ---- |
-| 1   | Fireball  | DAMAGE      | FIRE        | 30         | 2     | 1    |
-| 2   | Heal      | HEAL        | NONE        | 30         | 2     | 1    |
-| 3   | Arrow Hit | DAMAGE      | PHYSICAL    | 30         | 1     | 1    |
-| 4   | Trap      | DAMAGE      | PHYSICAL    | 30         | 1     | 1    |
-| 5   | Teleport  | MOVE        | PHYSICAL    | 30         | 100   | 1    |
+| ID  | Name      | Effect Type | Damage Type | Base Value | Range | Area Radius | Cost | Description                         |
+| --- | --------- | ----------- | ----------- | ---------- | ----- | ----------- | ---- | ----------------------------------- |
+| 1   | Fireball  | DAMAGE      | FIRE        | 10         | 4     | 2           | 1    | Area damage (enemy only)            |
+| 2   | Heal      | HEAL        | NONE        | 15         | 4     | 1           | 1    | Area heal (ally only, can be empty) |
+| 3   | Arrow Hit | DAMAGE      | PHYSICAL    | 10         | 7     | 1           | 1    | Locking single-target damage        |
+| 5   | Teleport  | MOVE        | PHYSICAL    | 30         | 100   | 100         | 1    | Teleport to target location         |
+
+> **Trap (ID 4)** is disabled in the current version and is not in
+> `SpellFactory.get_all_spells()`.
 
 ---
 
@@ -1031,7 +1033,7 @@ available_spells = SpellFactory.get_available_spells(piece: Piece) -> List[Spell
 
 ### Health
 
-- `max_health = 30 + strength * 2`
+- `max_health = 50 + strength * 2`
 
 ### Action Points
 
@@ -1039,14 +1041,13 @@ available_spells = SpellFactory.get_available_spells(piece: Piece) -> List[Spell
 - Strength ≤ 21: 2 points
 - Strength > 21: 3 points
 
-### Spell Slots
+### Spell Slots (`max_spell_slots`)
 
-- Intelligence ≤ 3: 1 slot
-- Intelligence ≤ 7: 2 slots
-- Intelligence ≤ 12: 3 slots
-- Intelligence ≤ 16: 5 slots
-- Intelligence ≤ 21: 8 slots
-- Intelligence > 21: 9 slots
+- Intelligence ≤ 3: 0 slots
+- Intelligence ≤ 12: 1 slot
+- Intelligence ≤ 16: 2 slots
+- Intelligence ≤ 21: 3 slots
+- Intelligence > 21: 5 slots
 
 ### Movement
 
@@ -1071,4 +1072,4 @@ available_spells = SpellFactory.get_available_spells(piece: Piece) -> List[Spell
 
 ---
 
-_Document Version: 2.1 (THUAI9)_ _Last Updated: April 2026_
+_Document Version: 2.2 (THUAI9)_ _Last Updated: May 2026_

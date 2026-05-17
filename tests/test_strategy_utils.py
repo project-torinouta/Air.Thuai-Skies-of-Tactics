@@ -36,7 +36,7 @@ def _make_piece(
     acc.set_strength_to(strength)
     acc.set_dexterity_to(dexterity)
     acc.set_intelligence_to(intelligence)
-    acc.set_max_health_to(30 + strength * 2)
+    acc.set_max_health_to(50 + strength * 2)
     acc.set_health_to(p.max_health)
     acc.set_max_action_points()
     acc.set_action_points_to(p.max_action_points)
