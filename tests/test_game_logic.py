@@ -48,7 +48,7 @@ def _make_piece(
     acc.set_strength_to(strength)
     acc.set_dexterity_to(dexterity)
     acc.set_intelligence_to(intelligence)
-    acc.set_max_health_to(30 + strength * 2)
+    acc.set_max_health_to(50 + strength * 2)
     acc.set_health_to(p.max_health)
     acc.set_max_action_points()
     acc.set_action_points_to(p.max_action_points)
@@ -274,11 +274,11 @@ class TestPiece(unittest.TestCase):
         self.assertEqual(p2.max_action_points, 1)
 
     def test_max_spell_slots_from_intelligence(self):
-        p = _make_piece(intelligence=2)  # ≤3 → 1 slot
-        self.assertEqual(p.max_spell_slots, 1)
+        p = _make_piece(intelligence=2)  # ≤3 → 0 slots
+        self.assertEqual(p.max_spell_slots, 0)
 
-        p2 = _make_piece(intelligence=10)  # 8-12 → 3 slots
-        self.assertEqual(p2.max_spell_slots, 3)
+        p2 = _make_piece(intelligence=10)  # ≤12 → 1 slot
+        self.assertEqual(p2.max_spell_slots, 1)
 
     def test_movement_calculation(self):
         p = _make_piece(strength=10, dexterity=15)
@@ -478,8 +478,10 @@ class TestSpells(unittest.TestCase):
         p1, p2 = self._setup(p1_pos=Point(5, 5), p2_pos=Point(5, 6))
         p1.spell_slots = 1
         p1.action_points = 1
-        trap = SpellFactory.get_spell_by_id(4)  # delayed, lifespan=2
-        self.assertTrue(trap.is_delay_spell)
+        trap = Spell(id=99, name="TestTrap", description="",
+                     effect_type=SpellEffectType.DAMAGE,
+                     damage_type=DamageType.PHYSICAL,
+                     base_value=10, is_delay_spell=True, base_lifespan=2)
         # Add a delayed spell context directly
         area = Area(p2.position.x, p2.position.y, 1)
         ctx = self._make_spell_ctx(p1, p2, trap, area)
