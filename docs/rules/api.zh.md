@@ -1007,13 +1007,14 @@ available_spells = SpellFactory.get_available_spells(piece: Piece) -> List[Spell
 
 ### 9.3 内置法术列表
 
-| ID  | 名称      | 效果类型 | 伤害类型 | 基础值 | 范围 | 消耗 |
-| --- | --------- | -------- | -------- | ------ | ---- | ---- |
-| 1   | Fireball  | DAMAGE   | FIRE     | 30     | 2    | 1    |
-| 2   | Heal      | HEAL     | NONE     | 30     | 2    | 1    |
-| 3   | Arrow Hit | DAMAGE   | PHYSICAL | 30     | 1    | 1    |
-| 4   | Trap      | DAMAGE   | PHYSICAL | 30     | 1    | 1    |
-| 5   | Teleport  | MOVE     | PHYSICAL | 30     | 100  | 1    |
+| ID  | 名称      | 效果类型 | 伤害类型 | 基础值 | 范围 | 区域半径 | 消耗 | 说明                       |
+| --- | --------- | -------- | -------- | ------ | ---- | -------- | ---- | -------------------------- |
+| 1   | Fireball  | DAMAGE   | FIRE     | 10     | 4    | 2        | 1    | 区域伤害（仅敌方）         |
+| 2   | Heal      | HEAL     | NONE     | 15     | 4    | 1        | 1    | 区域治疗（仅友方，可空放） |
+| 3   | Arrow Hit | DAMAGE   | PHYSICAL | 10     | 7    | 1        | 1    | 锁定单体伤害               |
+| 5   | Teleport  | MOVE     | PHYSICAL | 30     | 100  | 100      | 1    | 传送至落点                 |
+
+> **Trap（ID 4）** 当前版本已禁用，不在 `SpellFactory.get_all_spells()` 中。
 
 ---
 
@@ -1021,7 +1022,7 @@ available_spells = SpellFactory.get_available_spells(piece: Piece) -> List[Spell
 
 ### 生命值
 
-- `max_health = 30 + strength * 2`
+- `max_health = 50 + strength * 2`
 
 ### 行动点
 
@@ -1029,14 +1030,13 @@ available_spells = SpellFactory.get_available_spells(piece: Piece) -> List[Spell
 - 力量 ≤ 21: 2 点
 - 力量 > 21: 3 点
 
-### 法术位
+### 法术位（`max_spell_slots`）
 
-- 智力 ≤ 3: 1 个
-- 智力 ≤ 7: 2 个
-- 智力 ≤ 12: 3 个
-- 智力 ≤ 16: 5 个
-- 智力 ≤ 21: 8 个
-- 智力 > 21: 9 个
+- 智力 ≤ 3: 0 个
+- 智力 ≤ 12: 1 个
+- 智力 ≤ 16: 2 个
+- 智力 ≤ 21: 3 个
+- 智力 > 21: 5 个
 
 ### 移动力
 
@@ -1061,4 +1061,4 @@ available_spells = SpellFactory.get_available_spells(piece: Piece) -> List[Spell
 
 ---
 
-_文档版本: 2.1 (THUAI9)_ _最后更新: 2026 年 4 月_
+_文档版本: 2.2 (THUAI9)_ _最后更新: 2026 年 5 月_
