@@ -60,3 +60,25 @@ src/
     ├── alpha_beta.py
     └── random.py
 ```
+
+## Commit Convention
+
+This project uses **gitmoji + conventional commits**:
+
+```
+:emoji: type(scope): short description
+```
+
+| Emoji                | Type            | Use case                      |
+| -------------------- | --------------- | ----------------------------- |
+| `:tada:`             | `feat`          | Initial project / major start |
+| `:package:`          | `feat`          | New feature or dependency     |
+| `:snowflake:`        | `fix`           | Bug fix                       |
+| `:recycle:`          | `refactor`      | Code restructuring            |
+| `:art:`              | `style`/`chore` | Formatting, lint              |
+| `:page_facing_up:`   | `chore`         | License headers               |
+| `:see_no_evil:`      | `chore`         | gitignore                     |
+| `:memo:`             | `docs`          | Documentation                 |
+| `:white_check_mark:` | `test`          | Tests                         |
+
+See `.claude/skills/commit-message/SKILL.md` for the full list.
