@@ -24,6 +24,7 @@ import random
 from typing import Callable, List, Optional
 
 from env import Environment
+from strategies._utils import calculate_distance
 from strategy_utils import (
     fork_environment,
     get_attackable_targets,
@@ -40,6 +41,11 @@ from utils import (
 )
 
 MCTS_VERBOSE: bool = False
+
+# Maximum move actions to consider per expansion (prevents explosion from
+# high-movement pieces on large boards).  Includes the current position
+# (stay-put) and the N closest reachable cells to the nearest enemy.
+_MAX_MOVES_PER_EXPAND: int = 20
 
 
 class _MCTSNode:
@@ -58,14 +64,62 @@ class _MCTSNode:
         self.visits: int = 0
         self.value: float = 0.0
 
+    @staticmethod
+    def _sample_moves(
+        env: Environment, legal_moves: List[Point]
+    ) -> List[Optional[Point]]:
+        """Pick a subset of legal moves for expansion.
+
+        Always includes the current position (stay-put) and the closest
+        ``_MAX_MOVES_PER_EXPAND`` moves to the nearest enemy.  Returns a
+        list with a leading ``None`` (no-move sentinel).
+
+        :param env: The game environment.
+        :type env: Environment
+        :param legal_moves: All reachable positions from ``get_legal_moves``.
+        :type legal_moves: List[Point]
+        :returns: ``[None, move_1, move_2, ...]``.
+        :rtype: List[Optional[Point]]
+        """
+        if len(legal_moves) <= _MAX_MOVES_PER_EXPAND:
+            return [None] + legal_moves
+
+        current = env.current_piece
+        target_enemy = None
+        nearest = float("inf")
+        for p in env.action_queue:
+            if p.is_alive and p.team != current.team:
+                d = calculate_distance(current.position, p.position)
+                if d < nearest:
+                    nearest = d
+                    target_enemy = p
+
+        if target_enemy is None:
+            return [None] + legal_moves[:_MAX_MOVES_PER_EXPAND]
+
+        sorted_moves = sorted(
+            legal_moves,
+            key=lambda m: (
+                0 if m == current.position
+                else calculate_distance(m, target_enemy.position)
+            ),
+        )
+        return [None] + sorted_moves[:_MAX_MOVES_PER_EXPAND]
+
     def expand(self) -> None:
-        """Expand the node by generating all possible child actions."""
+        """Expand the node by generating child actions.
+
+        Legal moves are sampled to keep the branching factor manageable
+        (see :meth:`_sample_moves`).
+        """
         current_piece = self.env.current_piece
         legal_moves = get_legal_moves(self.env)
         attackable_targets = get_attackable_targets(self.env)
         spells = self.env.get_available_spells(current_piece)
 
-        for move in [None] + legal_moves:
+        moves = self._sample_moves(self.env, legal_moves)
+
+        for move in moves:
             if move is not None and current_piece.action_points <= 0:
                 continue
 

@@ -176,15 +176,27 @@ def simulate_attack(
 def step_with_action(env: Environment, action: ActionSet) -> None:
     """Advance one game step with a given action (mutates env in-place).
 
-    This function increments the round counter, resets action points,
-    processes delayed spells, executes the action, and checks for game
-    over. Designed for search/simulation use.
-
-    :param env: The game environment (will be mutated).
-    :type env: Environment
-    :param action: The action to execute.
-    :type action: ActionSet
+    Remaps AttackContext/SpellContext piece references from original
+    (pre-fork) objects to env's local piece copies before executing.
+    Search code (MCTS, alpha-beta) creates contexts pointing at the
+    *original* environment's pieces; without remapping, damage would be
+    applied to the originals instead of the fork's copies.
     """
+    if action.attack and action.attack_context:
+        for p in env.action_queue:
+            if p.id == action.attack_context.attacker.id:
+                action.attack_context.attacker = p
+            if (action.attack_context.target is not None
+                    and p.id == action.attack_context.target.id):
+                action.attack_context.target = p
+    if action.spell and action.spell_context:
+        for p in env.action_queue:
+            if p.id == action.spell_context.caster.id:
+                action.spell_context.caster = p
+            if (action.spell_context.target is not None
+                    and p.id == action.spell_context.target.id):
+                action.spell_context.target = p
+
     env.round_number += 1
 
     for piece in env.action_queue:
@@ -208,9 +220,13 @@ def step_with_action(env: Environment, action: ActionSet) -> None:
     if action:
         env.execute_player_action(action)
 
-    env.is_game_over = not any(
-        p.is_alive for p in env.player1.pieces
-    ) or not any(p.is_alive for p in env.player2.pieces)
+    env.current_piece = env.action_queue[0]
+
+    env.is_game_over = (
+        not any(p.is_alive for p in env.player1.pieces)
+        or not any(p.is_alive for p in env.player2.pieces)
+        or env.round_number >= env.max_rounds
+    )
 
     env.last_round_dead_pieces = np.array(env.new_dead_this_round, dtype=object)
     env.new_dead_this_round = np.array([], dtype=object)
@@ -231,6 +247,7 @@ def fork_environment(env: Environment) -> Environment:
 
     new_env.mode = env.mode
     new_env.round_number = env.round_number
+    new_env.max_rounds = env.max_rounds
     new_env.is_game_over = env.is_game_over
 
     if env.board:
