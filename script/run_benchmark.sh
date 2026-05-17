@@ -58,9 +58,18 @@ run ranger ranger aggressive aggressive "$ROUNDS_FAST"
 run ranger ranger defensive defensive "$ROUNDS_FAST"
 run ranger ranger random random "$ROUNDS_FAST"
 
-echo "=== New-vs-New ===" >&2
+echo "=== Sniper ===" >&2
+run sniper sniper aggressive aggressive "$ROUNDS_FAST"
+run sniper sniper defensive defensive "$ROUNDS_FAST"
+run sniper sniper warrior warrior "$ROUNDS_FAST"
+run sniper sniper tactical tactical "$ROUNDS_FAST"
+run sniper sniper ranger ranger "$ROUNDS_FAST"
+run sniper sniper random random "$ROUNDS_FAST"
+
+echo "=== Cross ===" >&2
 run tactical tactical ranger ranger "$ROUNDS_FAST"
 run warrior warrior tactical tactical "$ROUNDS_FAST"
 run ranger ranger warrior warrior "$ROUNDS_FAST"
+run aggressive aggressive sniper sniper "$ROUNDS_FAST"
 
 echo "=== Done ===" >&2
