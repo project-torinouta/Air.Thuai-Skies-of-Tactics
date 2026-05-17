@@ -237,25 +237,22 @@ class PieceAccessor:
     def set_max_spell_slots(self) -> None:
         """Auto-set max spell slots based on intelligence.
 
-        - intelligence <= 3: 1 slot
-        - intelligence <= 7: 2 slots
-        - intelligence <= 12: 3 slots
-        - intelligence <= 16: 5 slots
-        - intelligence <= 21: 8 slots
-        - otherwise: 9 slots
+        - intelligence <= 3: 0 slots
+        - intelligence <= 12: 1 slot
+        - intelligence <= 16: 2 slots
+        - intelligence <= 21: 3 slots
+        - otherwise: 5 slots
         """
         if self.piece.intelligence <= 3:
-            self.set_max_spell_slots_to(1)
-        elif self.piece.intelligence <= 7:
-            self.set_max_spell_slots_to(2)
+            self.set_max_spell_slots_to(0)
         elif self.piece.intelligence <= 12:
-            self.set_max_spell_slots_to(3)
+            self.set_max_spell_slots_to(1)
         elif self.piece.intelligence <= 16:
-            self.set_max_spell_slots_to(5)
+            self.set_max_spell_slots_to(2)
         elif self.piece.intelligence <= 21:
-            self.set_max_spell_slots_to(8)
+            self.set_max_spell_slots_to(3)
         else:
-            self.set_max_spell_slots_to(9)
+            self.set_max_spell_slots_to(5)
 
     def set_strength_to(self, value: int) -> None:
         """Set the strength attribute.
@@ -553,7 +550,7 @@ class Player:
 
             weapon, armor = features[3], features[4]
 
-            accessor.set_max_health_to(30 + strength * 2)
+            accessor.set_max_health_to(50 + strength * 2)
             accessor.set_health_to(piece.max_health)
 
             accessor.set_max_action_points()
@@ -1271,7 +1268,7 @@ class Environment:
                 h0 = int(hm[piece_arg.pos.x][piece_arg.pos.y])
             accessor.set_height_to(h0)
 
-            accessor.set_max_health_to(30 + piece_arg.strength * 2)
+            accessor.set_max_health_to(50 + piece_arg.strength * 2)
             accessor.set_health_to(piece.max_health)
             accessor.set_max_action_points()
             accessor.set_action_points_to(piece.max_action_points)

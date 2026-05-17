@@ -385,9 +385,9 @@ class SpellFactory:
                 description="Deals fire damage to enemies within the area.",
                 effect_type=SpellEffectType.DAMAGE,
                 damage_type=DamageType.FIRE,
-                base_value=30,
-                range_=2,
-                area_radius=5,
+                base_value=10,
+                range_=4,
+                area_radius=2,
                 spell_cost=1,
                 base_lifespan=0,
                 is_area_effect=True,
@@ -400,14 +400,14 @@ class SpellFactory:
                 description="Restores health to an ally unit.",
                 effect_type=SpellEffectType.HEAL,
                 damage_type=DamageType.NONE,
-                base_value=30,
-                range_=2,
-                area_radius=4,
+                base_value=15,
+                range_=4,
+                area_radius=1,
                 spell_cost=1,
                 base_lifespan=0,
-                is_area_effect=False,
+                is_area_effect=True,
                 is_delay_spell=False,
-                is_locking_spell=True,
+                is_locking_spell=False,
             ),
             Spell(
                 id=3,
@@ -415,29 +415,14 @@ class SpellFactory:
                 description="A physical arrow strike.",
                 effect_type=SpellEffectType.DAMAGE,
                 damage_type=DamageType.PHYSICAL,
-                base_value=30,
-                range_=1,
-                area_radius=7,
+                base_value=10,
+                range_=7,
+                area_radius=1,
                 spell_cost=1,
                 base_lifespan=0,
                 is_area_effect=False,
                 is_delay_spell=False,
                 is_locking_spell=True,
-            ),
-            Spell(
-                id=4,
-                name="Trap",
-                description="Sets a trap that triggers after a delay.",
-                effect_type=SpellEffectType.DAMAGE,
-                damage_type=DamageType.PHYSICAL,
-                base_value=30,
-                range_=1,
-                area_radius=0,
-                spell_cost=1,
-                base_lifespan=2,
-                is_area_effect=False,
-                is_delay_spell=True,
-                is_locking_spell=False,
             ),
             Spell(
                 id=5,
@@ -449,7 +434,7 @@ class SpellFactory:
                 range_=100,
                 area_radius=100,
                 spell_cost=1,
-                base_lifespan=2,
+                base_lifespan=0,
                 is_area_effect=False,
                 is_delay_spell=False,
                 is_locking_spell=True,
@@ -498,7 +483,8 @@ class SpellFactory:
                 for spell in all_spells
                 if spell.damage_type
                 in [DamageType.FIRE, DamageType.ICE, DamageType.LIGHTNING]
-                or spell.effect_type in [SpellEffectType.DAMAGE, SpellEffectType.DEBUFF]
+                or spell.effect_type
+                in [SpellEffectType.DAMAGE, SpellEffectType.HEAL, SpellEffectType.DEBUFF]
             )
         elif piece.type == "Archer":
             available.extend(
