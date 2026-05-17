@@ -20,19 +20,24 @@
 """Benchmark script for comparing AI strategies head-to-head.
 
 Runs multiple games between strategy pairings (single or round-robin)
-and reports win/loss/draw statistics.
+and reports win/loss/draw statistics. Supports multiple board files
+and random board generation.
 
 Usage:
-    python benchmark.py                              # Full round-robin, 10 rounds each
-    python benchmark.py --rounds 50                  # 50 games per matchup
+    python benchmark.py                                 # Full round-robin, 10 rounds each
+    python benchmark.py --rounds 50                     # 50 games per matchup
     python benchmark.py --p1 aggressive --p2 defensive  # Single matchup
-    python benchmark.py --p1 mcts --p2 alpha_beta --mcts-simulations 25 --alpha-beta-depth 4
+    python benchmark.py --board-dir BoardCase/          # Use all boards in directory
+    python benchmark.py --generate-boards 20            # Generate 20 random boards
+    python benchmark.py --generate-boards 10 --board-rows 16 --board-cols 16
 """
 
 import argparse
 import contextlib
+import glob
 import itertools
 import os
+import random
 import sys
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -62,6 +67,8 @@ STRATEGY_NAMES: List[str] = [
     "alpha_beta",
     "random",
 ]
+
+_GENERATED_BOARD_DIR: str = "BoardCase"
 
 
 def get_strategy_pair(
@@ -99,6 +106,207 @@ def get_strategy_pair(
     if name == "random":
         return (get_random_init_strategy(), get_random_action_strategy())
     raise ValueError(f"Unknown strategy: {name}")
+
+
+# ---------------------------------------------------------------------------
+# Board discovery and generation
+# ---------------------------------------------------------------------------
+
+
+def _make_grid(
+    rows: int,
+    cols: int,
+    obstacle_density: float,
+    border: int,
+) -> List[List[int]]:
+    """Generate a random grid of cell states for a board.
+
+    Produces a ``rows x cols`` grid where most cells are walkable (1) and
+    some are blocked (-1).  Guarantees at least 15 walkable cells on each
+    side of the border so that pieces can be placed.
+
+    :param rows: Number of rows in the grid.
+    :type rows: int
+    :param cols: Number of columns in the grid.
+    :type cols: int
+    :param obstacle_density: Probability that a cell is blocked.
+    :type obstacle_density: float
+    :param border: The y-coordinate of the border (split between players).
+    :type border: int
+    :returns: A 2D list of cell states (1 = walkable, -1 = blocked).
+    :rtype: List[List[int]]
+    """
+    grid: List[List[int]] = [
+        [1 for _ in range(rows)] for _ in range(cols)
+    ]
+
+    for x in range(cols):
+        for y in range(rows):
+            if random.random() < obstacle_density:
+                grid[x][y] = -1
+
+    open_bottom = sum(
+        1
+        for x in range(cols)
+        for y in range(border)
+        if grid[x][y] == 1
+    )
+    while open_bottom < 15:
+        x = random.randrange(cols)
+        y = random.randrange(border)
+        if grid[x][y] == -1:
+            grid[x][y] = 1
+            open_bottom += 1
+
+    open_top = sum(
+        1
+        for x in range(cols)
+        for y in range(border + 1, rows)
+        if grid[x][y] == 1
+    )
+    while open_top < 15:
+        x = random.randrange(cols)
+        y = random.randrange(border + 1, rows)
+        if grid[x][y] == -1:
+            grid[x][y] = 1
+            open_top += 1
+
+    return grid
+
+
+def _make_height_map(rows: int, cols: int) -> List[List[int]]:
+    """Generate a random height map using a simple smoothing approach.
+
+    Heights range from 0 to 3.
+
+    :param rows: Number of rows.
+    :type rows: int
+    :param cols: Number of columns.
+    :type cols: int
+    :returns: A 2D list of height values.
+    :rtype: List[List[int]]
+    """
+    heights: List[List[int]] = [
+        [random.randint(0, 3) for _ in range(rows)] for _ in range(cols)
+    ]
+
+    for _ in range(2):
+        smoothed: List[List[int]] = [
+            [0 for _ in range(rows)] for _ in range(cols)
+        ]
+        for x in range(cols):
+            for y in range(rows):
+                neighbors = [heights[x][y]]
+                if x > 0:
+                    neighbors.append(heights[x - 1][y])
+                if x < cols - 1:
+                    neighbors.append(heights[x + 1][y])
+                if y > 0:
+                    neighbors.append(heights[x][y - 1])
+                if y < rows - 1:
+                    neighbors.append(heights[x][y + 1])
+                smoothed[x][y] = round(sum(neighbors) / len(neighbors))
+        heights = smoothed
+
+    return heights
+
+
+def generate_random_board(
+    file_path: str,
+    rows: int = 20,
+    cols: int = 20,
+    obstacle_density: float = 0.1,
+) -> None:
+    """Generate a random board file at the given path.
+
+    The board is created with walkable cells and randomly placed obstacles.
+    The border is placed at ``rows // 2``.
+
+    :param file_path: Output path for the board file.
+    :type file_path: str
+    :param rows: Number of rows. Defaults to 20.
+    :type rows: int
+    :param cols: Number of columns. Defaults to 20.
+    :type cols: int
+    :param obstacle_density: Probability a cell is blocked (0.0-1.0).
+        Defaults to 0.1.
+    :type obstacle_density: float
+    """
+    border = rows // 2
+    grid = _make_grid(rows, cols, obstacle_density, border)
+    heights = _make_height_map(rows, cols)
+
+    with open(file_path, "w") as f:
+        f.write(f"{cols} {rows}\n\n")
+        for y in range(rows):
+            f.write(", ".join(str(grid[x][y]) for x in range(cols)) + "\n")
+        f.write("\n")
+        for y in range(rows):
+            f.write(", ".join(str(heights[x][y]) for x in range(cols)) + "\n")
+
+
+def resolve_boards(args: argparse.Namespace) -> List[str]:
+    """Build the list of board file paths based on CLI arguments.
+
+    Order of precedence:
+    1. ``--board`` pointing to a single file.
+    2. ``--board`` pointing to a directory (scans for ``*.txt``).
+    3. ``--board-dir`` (scans for ``*.txt`` in that directory).
+    4. ``--generate-boards N`` (creates N random boards).
+    5. Default: ``./BoardCase/case1.txt``.
+
+    :param args: Parsed command-line arguments.
+    :type args: argparse.Namespace
+    :returns: A list of board file paths.
+    :rtype: List[str]
+    """
+    boards: List[str] = []
+
+    if args.board is not None:
+        if os.path.isdir(args.board):
+            boards = sorted(glob.glob(os.path.join(args.board, "*.txt")))
+            if not boards:
+                print(
+                    f"Warning: no .txt files found in {args.board}, "
+                    f"using default board"
+                )
+        else:
+            boards = [args.board]
+    elif args.board_dir is not None:
+        boards = sorted(glob.glob(os.path.join(args.board_dir, "*.txt")))
+        if not boards:
+            print(
+                f"Warning: no .txt files found in {args.board_dir}, "
+                f"using default board"
+            )
+    elif args.generate_boards > 0:
+        os.makedirs(_GENERATED_BOARD_DIR, exist_ok=True)
+        for i in range(args.generate_boards):
+            path = os.path.join(_GENERATED_BOARD_DIR, f"generated_{i}.txt")
+            generate_random_board(
+                path,
+                rows=args.board_rows,
+                cols=args.board_cols,
+                obstacle_density=args.obstacle_density,
+            )
+            boards.append(path)
+        print(f"Generated {args.generate_boards} random board files ({args.board_cols}x{args.board_rows})")
+        print(f"  Density: {args.obstacle_density}")
+    else:
+        default = "./BoardCase/case1.txt"
+        if os.path.exists(default):
+            boards = [default]
+
+    if not boards:
+        print("Warning: no board files found, using default ./BoardCase/case1.txt")
+        boards = ["./BoardCase/case1.txt"]
+
+    return boards
+
+
+# ---------------------------------------------------------------------------
+# Game execution
+# ---------------------------------------------------------------------------
 
 
 def run_single_game(
@@ -156,7 +364,7 @@ def run_single_game(
 
 
 def run_matchup(
-    board_file: str,
+    board_files: List[str],
     p1_name: str,
     p2_name: str,
     strategies: Dict[str, StrategyPair],
@@ -165,10 +373,11 @@ def run_matchup(
 ) -> Tuple[int, int, int]:
     """Run multiple games between two named strategies.
 
+    A random board is selected from ``board_files`` for each game.
     Prints a progress dot per game.
 
-    :param board_file: Path to the board definition file.
-    :type board_file: str
+    :param board_files: List of available board file paths.
+    :type board_files: List[str]
     :param p1_name: Name of the player 1 strategy.
     :type p1_name: str
     :param p2_name: Name of the player 2 strategy.
@@ -190,7 +399,8 @@ def run_matchup(
     draws = 0
 
     for _ in range(rounds):
-        result = run_single_game(board_file, p1_pair, p2_pair, max_rounds)
+        board = random.choice(board_files)
+        result = run_single_game(board, p1_pair, p2_pair, max_rounds)
         if result == 1:
             p1_wins += 1
         elif result == 2:
@@ -202,6 +412,11 @@ def run_matchup(
         sys.stdout.flush()
 
     return p1_wins, p2_wins, draws
+
+
+# ---------------------------------------------------------------------------
+# Output formatting
+# ---------------------------------------------------------------------------
 
 
 def print_results_table(
@@ -287,6 +502,11 @@ def print_win_rate_summary(
     print("-" * 50)
 
 
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
 
@@ -298,11 +518,13 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
-            "  python benchmark.py                        # Round-robin, 10 games each\n"
-            "  python benchmark.py --rounds 50            # 50 games per matchup\n"
-            "  python benchmark.py --p1 aggressive --p2 defensive\n"
-            "  python benchmark.py --p1 mcts --p2 alpha_beta \\\n"
-            "      --mcts-simulations 25 --alpha-beta-depth 4"
+            "  python benchmark.py                                   # Round-robin\n"
+            "  python benchmark.py --rounds 50                       # 50 games each\n"
+            "  python benchmark.py --p1 aggressive --p2 defensive    # Single matchup\n"
+            "  python benchmark.py --board-dir BoardCase/            # Use dir boards\n"
+            "  python benchmark.py --generate-boards 20              # Random boards\n"
+            "  python benchmark.py --generate-boards 10 \\\n"
+            "      --board-rows 16 --board-cols 16 --obstacle-density 0.15\n"
         ),
     )
     parser.add_argument(
@@ -315,7 +537,40 @@ def parse_args() -> argparse.Namespace:
         "--board",
         type=str,
         default=None,
-        help="Path to the board file (default: ./BoardCase/case1.txt)",
+        help=(
+            "Path to a board file or a directory of board files. "
+            "Default: ./BoardCase/case1.txt"
+        ),
+    )
+    parser.add_argument(
+        "--board-dir",
+        type=str,
+        default=None,
+        help="Directory containing .txt board files (scanned at startup)",
+    )
+    parser.add_argument(
+        "--generate-boards",
+        type=int,
+        default=0,
+        help="Number of random boards to generate for the benchmark",
+    )
+    parser.add_argument(
+        "--board-rows",
+        type=int,
+        default=20,
+        help="Row count for generated boards (default: 20)",
+    )
+    parser.add_argument(
+        "--board-cols",
+        type=int,
+        default=20,
+        help="Column count for generated boards (default: 20)",
+    )
+    parser.add_argument(
+        "--obstacle-density",
+        type=float,
+        default=0.1,
+        help="Obstacle density for generated boards 0.0-1.0 (default: 0.1)",
     )
     parser.add_argument(
         "--max-game-rounds",
@@ -348,6 +603,12 @@ def parse_args() -> argparse.Namespace:
         help="Alpha-beta search depth (default: 3)",
     )
     parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Random seed for reproducible benchmarks",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Show game output during benchmark",
@@ -359,7 +620,10 @@ def main() -> None:
     """Main entry point for the benchmark."""
     args = parse_args()
 
-    board_file = args.board if args.board is not None else "./BoardCase/case1.txt"
+    if args.seed is not None:
+        random.seed(args.seed)
+
+    board_files = resolve_boards(args)
 
     strategies: Dict[str, StrategyPair] = {
         name: get_strategy_pair(
@@ -370,17 +634,31 @@ def main() -> None:
         for name in STRATEGY_NAMES
     }
 
+    board_desc: str
+    if args.generate_boards > 0:
+        board_desc = (
+            f"{args.generate_boards} generated boards "
+            f"({args.board_cols}x{args.board_rows}, "
+            f"density={args.obstacle_density})"
+        )
+    elif len(board_files) == 1:
+        board_desc = board_files[0]
+    else:
+        board_desc = f"{len(board_files)} boards from {os.path.dirname(board_files[0])}"
+
     print(f"THUAI9 Strategy Benchmark")
-    print(f"Board: {board_file}")
+    print(f"Board: {board_desc}")
     print(f"Games per matchup: {args.rounds}")
     print(f"Max in-game rounds: {args.max_game_rounds}")
+    if args.seed is not None:
+        print(f"Random seed: {args.seed}")
     print()
 
     if args.p1 and args.p2:
         print(f"Matchup: {args.p1} (P1) vs {args.p2} (P2)")
         print("Progress: ", end="", flush=True)
         p1_wins, p2_wins, draws = run_matchup(
-            board_file,
+            board_files,
             args.p1,
             args.p2,
             strategies,
@@ -397,7 +675,7 @@ def main() -> None:
             sys.stdout.write(f"  {p1_name:>12s} vs {p2_name:<12s} ")
             sys.stdout.flush()
             p1_wins, p2_wins, draws = run_matchup(
-                board_file,
+                board_files,
                 p1_name,
                 p2_name,
                 strategies,
