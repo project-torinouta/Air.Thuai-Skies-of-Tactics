@@ -1,15 +1,17 @@
 ```plaintext
-❯ uv run benchmark.py --rounds 10 --p1 aggressive --p2 alpha_beta --alpha-beta-depth 10
 THUAI9 Strategy Benchmark
-Board: ./BoardCase/case1.txt
+Board: 31 boards from BoardCase
 Games per matchup: 10
-Max in-game rounds: 100
+Max in-game rounds: 60
+Random seed: 42
 
-Matchup: aggressive (P1) vs alpha_beta (P2)
+Matchup: aggressive+mcts (P1) vs aggressive (P2)
+  Init: P1=aggressive, P2=aggressive
+  Action: P1=mcts, P2=aggressive
 Progress: ..........
 ==============================================================================
-Matchup                         P1 Wins  P2 Wins  Draws  P1 Win%
+Matchup                          P1 Wins  P2 Wins  Draws  P1 Win%
 ------------------------------------------------------------------------------
-aggressive vs alpha_beta             10        0      0   100.0%
+aggressive+mcts vs aggressive          0       10      0     0.0%
 ==============================================================================
 ```

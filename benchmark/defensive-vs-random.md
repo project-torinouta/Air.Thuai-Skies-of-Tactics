@@ -1,14 +1,17 @@
 ```plaintext
 THUAI9 Strategy Benchmark
-Board: ./BoardCase/case1.txt
-Games per matchup: 50
-Max in-game rounds: 100
+Board: 31 boards from BoardCase
+Games per matchup: 30
+Max in-game rounds: 60
+Random seed: 42
 
-Matchup: defensive (P1) vs alpha_beta (P2)
-Progress: ..................................................
+Matchup: defensive (P1) vs random (P2)
+  Init: P1=defensive, P2=random
+  Action: P1=defensive, P2=random
+Progress: ..............................
 ==============================================================================
 Matchup                         P1 Wins  P2 Wins  Draws  P1 Win%
 ------------------------------------------------------------------------------
-defensive vs alpha_beta              50        0      0   100.0%
+defensive vs random                   1       21      8     3.3%
 ==============================================================================
 ```
