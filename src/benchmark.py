@@ -68,7 +68,70 @@ STRATEGY_NAMES: List[str] = [
     "random",
 ]
 
+INIT_NAMES: List[str] = [
+    "aggressive",
+    "defensive",
+    "random",
+]
+
+ACTION_NAMES: List[str] = [
+    "aggressive",
+    "defensive",
+    "mcts",
+    "alpha_beta",
+    "random",
+]
+
 _GENERATED_BOARD_DIR: str = "BoardCase"
+
+
+def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
+    """Resolve a strategy name to an init strategy callable.
+
+    :param name: Strategy name from INIT_NAMES.
+    :type name: str
+    :returns: An initialisation strategy callable.
+    :rtype: Callable
+    :raises ValueError: If the name is unknown.
+    """
+    if name == "aggressive":
+        return get_aggressive_init_strategy()
+    if name == "defensive":
+        return get_defensive_init_strategy()
+    if name == "random":
+        return get_random_init_strategy()
+    raise ValueError(f"Unknown init strategy: {name}")
+
+
+def get_action_strategy(
+    name: str,
+    mcts_simulations: int = 10,
+    alpha_beta_depth: int = 3,
+) -> Callable[..., ActionSet]:
+    """Resolve a strategy name to an action strategy callable.
+
+    :param name: Strategy name from ACTION_NAMES.
+    :type name: str
+    :param mcts_simulations: MCTS simulation count (only for mcts). Defaults to 10.
+    :type mcts_simulations: int
+    :param alpha_beta_depth: Alpha-beta search depth (only for alpha_beta).
+        Defaults to 3.
+    :type alpha_beta_depth: int
+    :returns: An action strategy callable.
+    :rtype: Callable
+    :raises ValueError: If the name is unknown.
+    """
+    if name == "aggressive":
+        return get_aggressive_action_strategy()
+    if name == "defensive":
+        return get_defensive_action_strategy()
+    if name == "mcts":
+        return get_mcts_action_strategy(mcts_simulations)
+    if name == "alpha_beta":
+        return get_alpha_beta_action_strategy(alpha_beta_depth)
+    if name == "random":
+        return get_random_action_strategy()
+    raise ValueError(f"Unknown action strategy: {name}")
 
 
 def get_strategy_pair(
@@ -77,6 +140,9 @@ def get_strategy_pair(
     alpha_beta_depth: int = 3,
 ) -> StrategyPair:
     """Resolve a strategy name to an (init_fn, action_fn) pair.
+
+    Uses the strategy's own init when available, otherwise falls back
+    to defensive init.  This is kept for round-robin mode.
 
     :param name: Strategy name from STRATEGY_NAMES.
     :type name: str
@@ -89,23 +155,11 @@ def get_strategy_pair(
     :rtype: StrategyPair
     :raises ValueError: If the strategy name is unknown.
     """
-    if name == "aggressive":
-        return (get_aggressive_init_strategy(), get_aggressive_action_strategy())
-    if name == "defensive":
-        return (get_defensive_init_strategy(), get_defensive_action_strategy())
-    if name == "mcts":
-        return (
-            get_defensive_init_strategy(),
-            get_mcts_action_strategy(mcts_simulations),
-        )
-    if name == "alpha_beta":
-        return (
-            get_defensive_init_strategy(),
-            get_alpha_beta_action_strategy(alpha_beta_depth),
-        )
-    if name == "random":
-        return (get_random_init_strategy(), get_random_action_strategy())
-    raise ValueError(f"Unknown strategy: {name}")
+    if name in INIT_NAMES:
+        init_fn = get_init_strategy(name)
+    else:
+        init_fn = get_defensive_init_strategy()
+    return (init_fn, get_action_strategy(name, mcts_simulations, alpha_beta_depth))
 
 
 # ---------------------------------------------------------------------------
@@ -145,31 +199,18 @@ def _make_grid(
             if random.random() < obstacle_density:
                 grid[x][y] = -1
 
-    open_bottom = sum(
-        1
-        for x in range(cols)
-        for y in range(border)
-        if grid[x][y] == 1
-    )
-    while open_bottom < 15:
-        x = random.randrange(cols)
-        y = random.randrange(border)
-        if grid[x][y] == -1:
+    for half_border in (border, rows):
+        half_start = 0 if half_border == border else border + 1
+        blocked = [
+            (x, y)
+            for x in range(cols)
+            for y in range(half_start, half_border)
+            if grid[x][y] == -1
+        ]
+        open_cnt = cols * (half_border - half_start) - len(blocked)
+        needed = max(0, 15 - open_cnt)
+        for x, y in blocked[:needed]:
             grid[x][y] = 1
-            open_bottom += 1
-
-    open_top = sum(
-        1
-        for x in range(cols)
-        for y in range(border + 1, rows)
-        if grid[x][y] == 1
-    )
-    while open_top < 15:
-        x = random.randrange(cols)
-        y = random.randrange(border + 1, rows)
-        if grid[x][y] == -1:
-            grid[x][y] = 1
-            open_top += 1
 
     return grid
 
@@ -365,25 +406,22 @@ def run_single_game(
 
 def run_matchup(
     board_files: List[str],
-    p1_name: str,
-    p2_name: str,
-    strategies: Dict[str, StrategyPair],
+    p1_pair: StrategyPair,
+    p2_pair: StrategyPair,
     rounds: int,
     max_rounds: int,
 ) -> Tuple[int, int, int]:
-    """Run multiple games between two named strategies.
+    """Run multiple games between two strategy pairs.
 
     A random board is selected from ``board_files`` for each game.
     Prints a progress dot per game.
 
     :param board_files: List of available board file paths.
     :type board_files: List[str]
-    :param p1_name: Name of the player 1 strategy.
-    :type p1_name: str
-    :param p2_name: Name of the player 2 strategy.
-    :type p2_name: str
-    :param strategies: Mapping of names to strategy pairs.
-    :type strategies: Dict[str, StrategyPair]
+    :param p1_pair: (init, action) for player 1.
+    :type p1_pair: StrategyPair
+    :param p2_pair: (init, action) for player 2.
+    :type p2_pair: StrategyPair
     :param rounds: Number of games to play.
     :type rounds: int
     :param max_rounds: Max game rounds before timeout.
@@ -391,9 +429,6 @@ def run_matchup(
     :returns: (p1_wins, p2_wins, draws) counts.
     :rtype: Tuple[int, int, int]
     """
-    p1_pair = strategies[p1_name]
-    p2_pair = strategies[p2_name]
-
     p1_wins = 0
     p2_wins = 0
     draws = 0
@@ -582,13 +617,43 @@ def parse_args() -> argparse.Namespace:
         "--p1",
         type=str,
         choices=STRATEGY_NAMES,
-        help="Player 1 strategy (omit for full round-robin)",
+        help="Player 1 strategy (omit for full round-robin).  Sets both "
+             "init and action; use --p1-init/--p1-action to override individually.",
     )
     parser.add_argument(
         "--p2",
         type=str,
         choices=STRATEGY_NAMES,
-        help="Player 2 strategy (omit for full round-robin)",
+        help="Player 2 strategy (omit for full round-robin).  Sets both "
+             "init and action; use --p2-init/--p2-action to override individually.",
+    )
+    parser.add_argument(
+        "--p1-init",
+        type=str,
+        choices=INIT_NAMES,
+        default=None,
+        help="Player 1 init strategy (overrides --p1 for init)",
+    )
+    parser.add_argument(
+        "--p1-action",
+        type=str,
+        choices=ACTION_NAMES,
+        default=None,
+        help="Player 1 action strategy (overrides --p1 for action)",
+    )
+    parser.add_argument(
+        "--p2-init",
+        type=str,
+        choices=INIT_NAMES,
+        default=None,
+        help="Player 2 init strategy (overrides --p2 for init)",
+    )
+    parser.add_argument(
+        "--p2-action",
+        type=str,
+        choices=ACTION_NAMES,
+        default=None,
+        help="Player 2 action strategy (overrides --p2 for action)",
     )
     parser.add_argument(
         "--mcts-simulations",
@@ -654,18 +719,52 @@ def main() -> None:
         print(f"Random seed: {args.seed}")
     print()
 
-    if args.p1 and args.p2:
-        print(f"Matchup: {args.p1} (P1) vs {args.p2} (P2)")
+    p1_init_name: Optional[str] = args.p1_init or args.p1
+    p1_action_name: Optional[str] = args.p1_action or args.p1
+    p2_init_name: Optional[str] = args.p2_init or args.p2
+    p2_action_name: Optional[str] = args.p2_action or args.p2
+
+    if p1_init_name and p1_action_name and p2_init_name and p2_action_name:
+        p1_pair = (
+            get_init_strategy(p1_init_name),
+            get_action_strategy(
+                p1_action_name,
+                mcts_simulations=args.mcts_simulations,
+                alpha_beta_depth=args.alpha_beta_depth,
+            ),
+        )
+        p2_pair = (
+            get_init_strategy(p2_init_name),
+            get_action_strategy(
+                p2_action_name,
+                mcts_simulations=args.mcts_simulations,
+                alpha_beta_depth=args.alpha_beta_depth,
+            ),
+        )
+
+        p1_label = (
+            f"{p1_init_name}+{p1_action_name}"
+            if p1_init_name != p1_action_name
+            else p1_init_name
+        )
+        p2_label = (
+            f"{p2_init_name}+{p2_action_name}"
+            if p2_init_name != p2_action_name
+            else p2_init_name
+        )
+
+        print(f"Matchup: {p1_label} (P1) vs {p2_label} (P2)")
+        print(f"  Init: P1={p1_init_name}, P2={p2_init_name}")
+        print(f"  Action: P1={p1_action_name}, P2={p2_action_name}")
         print("Progress: ", end="", flush=True)
         p1_wins, p2_wins, draws = run_matchup(
             board_files,
-            args.p1,
-            args.p2,
-            strategies,
+            p1_pair,
+            p2_pair,
             args.rounds,
             args.max_game_rounds,
         )
-        results = {(args.p1, args.p2): (p1_wins, p2_wins, draws)}
+        results = {(p1_label, p2_label): (p1_wins, p2_wins, draws)}
         print_results_table(results)
     else:
         print("Running round-robin benchmark...")
@@ -676,9 +775,8 @@ def main() -> None:
             sys.stdout.flush()
             p1_wins, p2_wins, draws = run_matchup(
                 board_files,
-                p1_name,
-                p2_name,
-                strategies,
+                strategies[p1_name],
+                strategies[p2_name],
                 args.rounds,
                 args.max_game_rounds,
             )
