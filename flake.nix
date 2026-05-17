@@ -62,6 +62,19 @@
             popd > /dev/null
           '';
         };
+
+        clean = pkgs.writeShellApplication {
+          name = "clean";
+          text = ''
+            echo "→ Cleaning up build directory"
+            if ls build/ >/dev/null 2>&1; then
+              rm -rf build
+              echo "✅ Clean successfully"
+            else
+              echo "❌ failed to clean because there are no matched files"
+            fi
+          '';
+        };
       });
       devShells = forAllSystems ({ pkgs }: {
         default = pkgs.mkShell {
