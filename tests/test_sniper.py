@@ -186,8 +186,8 @@ class TestSniperInit(unittest.TestCase):
         msg.board = _make_sniper_env().board
         result = strategy(msg)
         arg = result[0]
-        self.assertEqual(arg.strength, 28)
-        self.assertEqual(arg.dexterity, 2)
+        self.assertEqual(arg.strength, 30)
+        self.assertEqual(arg.dexterity, 0)
         self.assertEqual(arg.intelligence, 0)
         self.assertEqual(arg.equip.x, 3)
         self.assertEqual(arg.equip.y, 3)
@@ -406,8 +406,8 @@ class TestSniperEdgeCases(unittest.TestCase):
         msg.board = _make_sniper_env().board
         result = strategy(msg)
         arg = result[0]
-        self.assertEqual(arg.strength, 28)
-        self.assertEqual(arg.dexterity, 2)
+        self.assertEqual(arg.strength, 30)
+        self.assertEqual(arg.dexterity, 0)
         self.assertEqual(arg.intelligence, 0)
 
 

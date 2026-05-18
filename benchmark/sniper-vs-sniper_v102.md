@@ -5,13 +5,13 @@ Games per matchup: 30
 Max in-game rounds: 60
 Random seed: 42
 
-Matchup: tactical (P1) vs aggressive (P2)
-  Init: P1=tactical, P2=aggressive
-  Action: P1=tactical, P2=aggressive
+Matchup: sniper (P1) vs sniper_v102 (P2)
+  Init: P1=sniper, P2=sniper_v102
+  Action: P1=sniper, P2=sniper_v102
 Progress: ..............................
 ==============================================================================
 Matchup                         P1 Wins  P2 Wins  Draws  P1 Win%
 ------------------------------------------------------------------------------
-tactical vs aggressive                0       25      5     0.0%
+sniper vs sniper_v102                30        0      0   100.0%
 ==============================================================================
 ```
