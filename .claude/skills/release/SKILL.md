@@ -83,13 +83,7 @@ gh release create v<VERSION> \
   --title "v<VERSION> — <description>" \
   --notes "<release notes>" \
   'build/v<VERSION>.zip' \
-  'build/aggressive.pdf' \
-  'build/defensive.pdf' \
-  'build/mcts.pdf' \
-  'build/alpha_beta.pdf' \
-  'build/tactical.pdf' \
-  'build/warrior.pdf' \
-  'build/sniper.pdf'
+  'build/*.pdf'
 ```
 
 ### 7. Report Back
