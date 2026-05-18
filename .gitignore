@@ -13,3 +13,6 @@
 **/build
 ## The pdf output of Typst document
 **/*.pdf
+
+## Downloaded replay json files
+**/replay
