@@ -92,6 +92,14 @@ run sniper_v102 sniper_v102 tactical tactical "$ROUNDS"
 run sniper_v102 sniper_v102 ranger ranger "$ROUNDS"
 run sniper_v102 sniper_v102 random random "$ROUNDS"
 
+echo "=== Sniper_v103 ===" >&2
+run sniper_v103 sniper_v103 aggressive aggressive "$ROUNDS"
+run sniper_v103 sniper_v103 defensive defensive "$ROUNDS"
+run sniper_v103 sniper_v103 warrior warrior "$ROUNDS"
+run sniper_v103 sniper_v103 tactical tactical "$ROUNDS"
+run sniper_v103 sniper_v103 ranger ranger "$ROUNDS"
+run sniper_v103 sniper_v103 random random "$ROUNDS"
+
 echo "=== Cross ===" >&2
 run tactical tactical ranger ranger "$ROUNDS"
 run warrior warrior tactical tactical "$ROUNDS"
@@ -99,5 +107,7 @@ run ranger ranger warrior warrior "$ROUNDS"
 run aggressive aggressive sniper sniper "$ROUNDS"
 run sniper sniper sniper_v102 sniper_v102 "$ROUNDS"
 run sniper_v102 sniper_v102 sniper sniper "$ROUNDS"
+run sniper sniper sniper_v103 sniper_v103 "$ROUNDS"
+run sniper_v103 sniper_v103 sniper sniper "$ROUNDS"
 
 echo "=== Done ===" >&2

@@ -1,6 +1,6 @@
 ```plaintext
 THUAI9 Strategy Benchmark
-Board: 31 boards from BoardCase
+Board: 30 boards from BoardCase
 Games per matchup: 30
 Max in-game rounds: 60
 Random seed: 42
@@ -12,6 +12,6 @@ Progress: ..............................
 ==============================================================================
 Matchup                         P1 Wins  P2 Wins  Draws  P1 Win%
 ------------------------------------------------------------------------------
-ranger vs aggressive                  6       24      0    20.0%
+ranger vs aggressive                  5       25      0    16.7%
 ==============================================================================
 ```

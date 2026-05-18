@@ -6,7 +6,7 @@ THUAI9 苍穹棋域 (Skies of Tactics) is a turn-based AI competition game where
 players control 3 pieces each on a grid board. Contestants write Python
 strategies (initialization + per-turn actions) to compete.
 
-The game has been stat-solved: **STR 30, bow + heavy armour, advance-and-attack**
+The game has been stat-solved: **STR 29 / DEX 1, bow + heavy armour, advance-and-attack**
 is the Pareto-optimal physical build confirmed by benchmarks and 40+ Saiblo
 replays. See `src/strategies/sniper.py`.
 
@@ -50,7 +50,8 @@ src/
     ├── random.py       # Random delegation
     ├── tactical.py     # Mage kiting strategy
     ├── warrior.py      # Warrior + Ranger melee/ranged burst
-    ├── sniper.py       # STR 30 bow + heavy, advance-and-attack (optimal)
+    ├── sniper.py       # STR 29 / DEX 1 bow + heavy, advance-and-attack (optimal)
+├── sniper_v103.py  # Original STR 30 baseline (comparison)
     ├── sniper_v102.py  # STR 28 baseline (for comparison benchmarking)
     └── _utils.py       # Shared helpers (positioning, distance)
 

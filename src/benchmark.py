@@ -65,6 +65,10 @@ from strategies.sniper_v102 import (
     get_sniper_init_strategy_v102,
     get_sniper_action_strategy_v102
 )
+from strategies.sniper_v103 import (
+    get_sniper_init_strategy_v103,
+    get_sniper_action_strategy_v103
+)
 from strategies.sniper import (
     get_sniper_action_strategy,
     get_sniper_init_strategy,
@@ -90,6 +94,7 @@ STRATEGY_NAMES: List[str] = [
     "random",
     "sniper",
     "sniper_v102",
+    "sniper_v103",
 ]
 
 INIT_NAMES: List[str] = [
@@ -101,6 +106,7 @@ INIT_NAMES: List[str] = [
     "random",
     "sniper",
     "sniper_v102",
+    "sniper_v103",
 ]
 
 ACTION_NAMES: List[str] = [
@@ -114,6 +120,7 @@ ACTION_NAMES: List[str] = [
     "random",
     "sniper",
     "sniper_v102",
+    "sniper_v103",
 ]
 
 _GENERATED_BOARD_DIR: str = "BoardCase"
@@ -142,6 +149,8 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_sniper_init_strategy()
     if name == "sniper_v102":
         return get_sniper_init_strategy_v102()
+    if name == "sniper_v103":
+        return get_sniper_init_strategy_v103()
     if name == "random":
         return get_random_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
@@ -183,6 +192,8 @@ def get_action_strategy(
         return get_sniper_action_strategy()
     if name == "sniper_v102":
         return get_sniper_action_strategy_v102()
+    if name == "sniper_v103":
+        return get_sniper_action_strategy_v103()
     if name == "random":
         return get_random_action_strategy()
     raise ValueError(f"Unknown action strategy: {name}")
