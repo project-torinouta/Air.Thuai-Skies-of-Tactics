@@ -17,17 +17,15 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"""Optimised sniper strategy — bow + heavy armour, STR 29 / DEX 1, advance-and-attack.
+"""Sniper v1.0.3 baseline — STR 30, DEX 0, bow + heavy armour.
 
-Refined build within the 30-point attribute budget, trading 1 STR for 1 DEX
-to gain turn-order initiative advantage:
+Preserves the original STR 30 build for comparison benchmarking against
+the refined STR 29 / DEX 1 variant in sniper.py.
 
-- STR 29: bow deals 45-23=22 damage per hit, 108 HP
-- DEX 1: +1 initiative (d10+DEX for turn order), +1 movement
-- Heavy armour caps incoming attacks: aggressive deals only 7, warrior 11
-- Advance-and-attack: when moving closes distance into bow range, the
-  sniper attacks in the same turn instead of waiting for the next one
-- Focus-fire lowest-health enemy: snowball 3v2, 3v1
+- STR 30: bow deals 46-23=23 damage per hit, 110 HP
+- DEX 0: initiative sacrificed for max STR
+- Heavy armour caps incoming attacks
+- Advance-and-attack, focus-fire lowest-health enemy
 """
 
 from typing import Callable, List
@@ -37,10 +35,10 @@ from strategies._utils import allocate_init_positions, calculate_distance
 from utils import ActionSet, AttackContext, PieceArg, Point
 
 
-def get_sniper_init_strategy() -> Callable[..., List[PieceArg]]:
-    """Return the optimised sniper initialisation strategy.
+def get_sniper_init_strategy_v103() -> Callable[..., List[PieceArg]]:
+    """Return the sniper v1.0.3 initialisation strategy (STR 30 baseline).
 
-    Each piece: STR 29, DEX 1, bow + heavy armour.
+    Each piece: STR 30 (max), DEX 0, bow + heavy armour.
 
     :returns: A callable that takes an ``InitGameMessage`` and returns
         a list of ``PieceArg``.
@@ -65,8 +63,8 @@ def get_sniper_init_strategy() -> Callable[..., List[PieceArg]]:
         piece_args: List[PieceArg] = []
         for pos in positions:
             arg = PieceArg()
-            arg.strength = 29
-            arg.dexterity = 1
+            arg.strength = 30
+            arg.dexterity = 0
             arg.intelligence = 0
             arg.equip = Point(3, 3)
             arg.pos = pos
@@ -76,8 +74,8 @@ def get_sniper_init_strategy() -> Callable[..., List[PieceArg]]:
     return strategy
 
 
-def get_sniper_action_strategy() -> Callable[..., ActionSet]:
-    """Return the optimised sniper action strategy.
+def get_sniper_action_strategy_v103() -> Callable[..., ActionSet]:
+    """Return the sniper v1.0.3 action strategy (same logic, original).
 
     1. Focus-fire the lowest-health enemy within bow range
     2. If no enemy is in range, advance toward the lowest-health enemy.
