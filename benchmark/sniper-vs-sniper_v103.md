@@ -5,13 +5,13 @@ Games per matchup: 30
 Max in-game rounds: 60
 Random seed: 42
 
-Matchup: sniper_v102 (P1) vs random (P2)
-  Init: P1=sniper_v102, P2=random
-  Action: P1=sniper_v102, P2=random
+Matchup: sniper (P1) vs sniper_v103 (P2)
+  Init: P1=sniper, P2=sniper_v103
+  Action: P1=sniper, P2=sniper_v103
 Progress: ..............................
 ==============================================================================
 Matchup                         P1 Wins  P2 Wins  Draws  P1 Win%
 ------------------------------------------------------------------------------
-sniper_v102 vs random                30        0      0   100.0%
+sniper vs sniper_v103                20       10      0    66.7%
 ==============================================================================
 ```
