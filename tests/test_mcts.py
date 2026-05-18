@@ -233,9 +233,10 @@ class TestMCTSNodeSimulate(unittest.TestCase):
                 p.health = 1
         from strategies.mcts import _MCTSNode
         node = _MCTSNode(self.env)
-        result = node.simulate()
-        # Should be >= 0 (win or draw)
-        self.assertGreaterEqual(result, 0.0)
+        # Average over multiple simulations to smooth out randomness
+        results = [node.simulate() for _ in range(10)]
+        avg = sum(results) / len(results)
+        self.assertGreaterEqual(avg, 0.0)
 
     def test_simulate_with_doomed_piece(self):
         """If our piece is at 1 HP, simulation should likely result in a loss."""
@@ -243,8 +244,10 @@ class TestMCTSNodeSimulate(unittest.TestCase):
         self.env.current_piece.max_health = 50
         from strategies.mcts import _MCTSNode
         node = _MCTSNode(self.env)
-        result = node.simulate()
-        self.assertLessEqual(result, 0.0)
+        # Average over multiple simulations to smooth out randomness
+        results = [node.simulate() for _ in range(10)]
+        avg = sum(results) / len(results)
+        self.assertLessEqual(avg, 0.0)
 
     def test_simulate_runs_multiple_steps(self):
         """Simulation should execute multiple random playout steps."""

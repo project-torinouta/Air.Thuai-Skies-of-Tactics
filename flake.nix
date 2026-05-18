@@ -94,6 +94,19 @@
           '';
         };
 
+        test = pkgs.writeShellApplication {
+          name = "test";
+          runtimeInputs = [ pkgs.uv ];
+          text = ''
+            echo "→ Begin to launch all Python unittest"
+            pushd src >/dev/null
+            uv venv
+            uv pip install -r requirements.txt
+            uv run python -m unittest discover -s ../tests -p 'test_*.py'
+            popd >/dev/null
+          '';
+        };
+
         clean = pkgs.writeShellApplication {
           name = "clean";
           text = ''

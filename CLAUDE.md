@@ -18,7 +18,15 @@ docs/
 │   ├── api.zh.md / api.en.md
 │   ├── game.zh.md / game.en.md
 │   └── rank.zh.md / rank.en.md
-└── reference/          # Additional reference materials (TBD)
+├── reference/          # Additional reference materials (TBD)
+└── strategies/         # Strategy documentation (.typ)
+    ├── aggressive.typ
+    ├── defensive.typ
+    ├── mcts.typ
+    ├── alpha_beta.typ
+    ├── tactical.typ
+    ├── warrior.typ
+    └── sniper.typ
 
 src/
 ├── utils.py            # Core types: Point, ActionSet, PieceArg, Spell, enums
@@ -31,6 +39,7 @@ src/
 ├── main.py             # Saiblo competition entry point
 ├── board_visual.py     # Colourised terminal output
 ├── test_local.py       # Smoke test
+├── benchmark.py        # Head-to-head strategy benchmark
 ├── pyproject.toml      # Project config with ruff/mypy
 ├── BoardCase/          # Board definition files
 └── strategies/         # Built-in strategies (one file per variant)
@@ -91,5 +100,5 @@ See `.claude/skills/release/SKILL.md`.
   double quotes, space indent).
 - **Strategies**: Each strategy variant lives in its own file under
   `src/strategies/`. Import factory functions directly:
-  `from strategies.aggressive import get_aggressive_action_strategy`.
+  `from strategies.sniper import get_sniper_action_strategy`.
 - **StrategyFactory is removed**. Use `src/strategies/` functions instead.

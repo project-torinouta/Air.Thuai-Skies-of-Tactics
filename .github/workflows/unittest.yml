@@ -1,0 +1,23 @@
+name: "Python Unittest"
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  python-unittest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v25
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Python Tests
+        run: nix run .#test

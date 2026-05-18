@@ -1,49 +1,142 @@
 <div align="center">
-  <img src="assets/banner.png" />
-  <h1>THUAI-9: Skies of Tactics</h1>
+  <img src="assets/banner.png" alt="THUAI9 Skies of Tactics" />
 
-[![build](https://img.shields.io/github/actions/workflow/status/project-torinouta/Air.Thuai-Skies-of-Tactics/nightly.yml?label=nightly)](https://github.com/AshGreyG/Obsino/actions/workflows/nightly.yml)
-[![Typst](https://img.shields.io/badge/Typst-239DAD?logo=typst&logoColor=fff)](https://typst.app/)
-[![Nix](https://img.shields.io/badge/Nix-5277C3?logo=nixos&logoColor=fff)](https://nixos.org/)
-[![MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+  <h1>⚔️ Skies of Tactics</h1>
+  <p><em>Turn-based AI competition game — write Python strategies, compete on Saiblo</em></p>
+
+  <!-- Badges -->
+  <p>
+    <a href="https://github.com/project-torinouta/Air.Thuai-Skies-of-Tactics/actions/workflows/nightly.yml">
+      <img src="https://img.shields.io/github/actions/workflow/status/project-torinouta/Air.Thuai-Skies-of-Tactics/nightly.yml?label=nightly&style=flat-square&logo=github" alt="build" />
+    </a>
+    <a href="https://github.com/project-torinouta/Air.Thuai-Skies-of-Tactics/releases">
+      <img src="https://img.shields.io/github/v/release/project-torinouta/Air.Thuai-Skies-of-Tactics?style=flat-square&logo=semver" alt="release" />
+    </a>
+    <a href="https://nixos.org/">
+      <img src="https://img.shields.io/badge/Nix-5277C3?style=flat-square&logo=nixos&logoColor=fff" alt="Nix" />
+    </a>
+    <a href="https://www.python.org/">
+      <img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=fff" alt="python" />
+    </a>
+    <a href="LICENSE">
+      <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="MIT" />
+    </a>
+  </p>
+</div>
+
+---
+
+## 📋 Table of Contents
+
+- [Overview](#overview)
+- [Game Rules](#-game-rules)
+- [Quick Start](#-quick-start)
+- [Strategies](#-strategies)
+- [Project Structure](#-project-structure)
+- [Development](#-development)
+- [Benchmark Results](#-benchmark-results)
+- [Commit Convention](#-commit-convention)
+- [License](#-license)
+
+---
+
+## 🎯 Overview
+
+**Skies of Tactics** is a turn-based grid strategy game for the [THUAI9](https://saiblo.net) competition. Two players each control 3 pieces on a 20×20 board, making tactical decisions every turn — move, attack, or cast spells.
+
+Contestants write **Python strategies** that compete on the Saiblo platform. The project provides:
+
+- ✅ A full game engine with pathfinding, combat, and spell systems
+- ✅ Multiple built-in AI strategies for study and comparison
+- ✅ Local testing tools for rapid iteration
+- ✅ Nix-based reproducible builds and PDF documentation
+- ✅ **40+ game replays** from Saiblo for strategy analysis
+
+---
+
+## 📖 Game Rules
+
+<div align="center">
+
+| English                                | 中文                              |
+| -------------------------------------- | --------------------------------- |
+| [Game Rules](docs/rules/game.en.md)    | [游戏规则](docs/rules/game.zh.md) |
+| [API Reference](docs/rules/api.en.md)  | [API 参考](docs/rules/api.zh.md)  |
+| [Ranking Rules](docs/rules/rank.en.md) | [排名规则](docs/rules/rank.zh.md) |
 
 </div>
 
-A turn-based grid strategy game where AI-controlled pieces compete in tactical
-combat. Contestants write Python strategies (initialization + per-turn actions)
-to compete on the Saiblo platform.
+### Key Mechanics
 
-## Rules
+- **3 pieces per player**, each with 30 attribute points (STR / DEX / INT)
+- **Equipment**: weapon (1–4) + armour (1–3) define damage, range, and resist
+- **Action Points**: STR thresholds determine AP per turn (≤13→1, ≤21→2, >21→3)
+- **Spell slots**: INT thresholds (≤12→1, ≤16→2, ≤21→3, >21→5)
+- **Movement**: Manhattan-based, with A\* pathfinding
+- **Win condition**: eliminate all 3 enemy pieces
 
-- [Game Rules (English)](docs/rules/game.en.md)
-- [Game Rules (中文)](docs/rules/game.zh.md)
-- [API Reference (English)](docs/rules/api.en.md)
-- [API Reference (中文)](docs/rules/api.zh.md)
-- [Ranking Rules (English)](docs/rules/rank.en.md)
-- [Ranking Rules (中文)](docs/rules/rank.zh.md)
+---
 
-## Quick Start
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/) (Python package manager)
+- [Nix](https://nixos.org/) (optional, for builds)
+
+### Run a Local AI Battle
 
 ```bash
 cd src
-uv run local_client.py --mode function --strategy aggressive
+uv run local_client.py --mode function --strategy sniper
 ```
 
-### Options
+### Run the Benchmark
 
-| Flag                 | Description                                           |
-| -------------------- | ----------------------------------------------------- |
-| `--mode`             | `local` (console two-player) or `function` (AI vs AI) |
-| `--strategy`         | `aggressive`, `defensive`, or `mcts`                  |
-| `--board`            | Path to board file (default: `./BoardCase/case1.txt`) |
-| `--mcts-simulations` | MCTS simulation count (default: 25)                   |
+```bash
+cd src
+uv run benchmark.py --p1 sniper --p2 aggressive --rounds 30 --board-dir BoardCase/ --seed 42
+```
+
+### Build Artifacts (with Nix)
+
+```bash
+nix run .#clean
+nix run .#build      # → build/nightly-latest.zip
+nix run .#documents   # → build/*.pdf (7 strategy docs)
+```
+
+### Command-Line Options
+
+| Flag            | Description                                                          |
+| --------------- | -------------------------------------------------------------------- |
+| `--mode`        | `local` (two-player console) or `function` (AI vs AI)                |
+| `--strategy`    | `aggressive`, `defensive`, `tactical`, `warrior`, `ranger`, `sniper` |
+| `--board`       | Path to board file (default: `./BoardCase/case1.txt`)                |
+| `--p1` / `--p2` | Strategies for head-to-head benchmark                                |
 
 ### Writing Your Own Strategy
 
-Create a new module in `src/strategies/` following the existing pattern:
+Create a new module in `src/strategies/` implementing two factory functions:
 
 ```python
-from strategies.aggressive import get_aggressive_action_strategy
+from env import Environment, InitGameMessage
+from utils import ActionSet, PieceArg
+
+def get_my_init_strategy():
+    def strategy(msg: InitGameMessage) -> list[PieceArg]:
+        # Return 3 PieceArgs with your stat allocation
+        ...
+
+    return strategy
+
+def get_my_action_strategy():
+    def strategy(env: Environment) -> ActionSet:
+        # Return one ActionSet per turn
+        ...
+
+    return strategy
 ```
 
 See [`docs/rules/api.en.md`](docs/rules/api.en.md) for the full API reference.
@@ -196,16 +289,33 @@ This project uses **gitmoji + conventional commits**:
 :emoji: type(scope): short description
 ```
 
-| Emoji                | Type            | Use case                      |
-| -------------------- | --------------- | ----------------------------- |
-| `:tada:`             | `feat`          | Initial project / major start |
-| `:package:`          | `feat`          | New feature or dependency     |
-| `:snowflake:`        | `fix`           | Bug fix                       |
-| `:recycle:`          | `refactor`      | Code restructuring            |
-| `:art:`              | `style`/`chore` | Formatting, lint              |
-| `:page_facing_up:`   | `chore`         | License headers               |
-| `:see_no_evil:`      | `chore`         | gitignore                     |
-| `:memo:`             | `docs`          | Documentation                 |
-| `:white_check_mark:` | `test`          | Tests                         |
+| Emoji         | Type       | Use Case                |
+| ------------- | ---------- | ----------------------- |
+| `:unicorn:`   | `feat`     | New feature or strategy |
+| `:bug:`       | `fix`      | Bug fix                 |
+| `:memo:`      | `docs`     | Documentation           |
+| `:test_tube:` | `test`     | Tests                   |
+| `:fire:`      | `chore`    | Benchmark / cleanup     |
+| `:recycle:`   | `refactor` | Code restructuring      |
+| `:art:`       | `style`    | Formatting              |
+| `:bookmark:`  | `release`  | Version bump            |
 
 See `.claude/skills/commit-message/SKILL.md` for the full list.
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ for the THUAI9 competition · Saiblo platform</sub>
+  <br />
+  <sub>
+    <a href="https://github.com/project-torinouta/Air.Thuai-Skies-of-Tactics">GitHub</a> ·
+    <a href="https://github.com/project-torinouta/Air.Thuai-Skies-of-Tactics/releases">Releases</a> ·
+    <a href="https://github.com/project-torinouta/Air.Thuai-Skies-of-Tactics/issues">Issues</a>
+  </sub>
+</div>
