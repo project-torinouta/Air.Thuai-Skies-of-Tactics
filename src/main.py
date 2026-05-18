@@ -89,6 +89,8 @@ def run() -> None:
     strategy invocation, and error reporting.
     """
 
+    args = parse_args()
+
     action_strategy = get_sniper_action_strategy()
     init_strategy = get_sniper_init_strategy()
 
