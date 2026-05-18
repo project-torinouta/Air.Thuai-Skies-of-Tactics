@@ -29,8 +29,8 @@
 
 The *sniper* strategy is a bow-wielding heavy-armour build designed to out-trade
 every existing strategy. It achieves a 100% win rate across all matchups in the
-standard 31-board benchmark by exploiting a simple insight: at STR 30 (max), the
-bow deals 46 base damage — enough to punch through heavy armour for 23 damage
+standard 31-board benchmark by exploiting a simple insight: at STR 29 / DEX 1, the
+bow deals 45 base damage — enough to punch through heavy armour for 22 damage
 per hit, while the same heavy armour reduces incoming attacks to single digits.
 
 == Characteristics
@@ -39,8 +39,8 @@ per hit, while the same heavy armour reduces incoming attacks to single digits.
   table(
     columns: (auto, auto),
     [*Aspect*], [*Value*],
-    [Strength], [30],
-    [Dexterity], [0],
+    [Strength], [29],
+    [Dexterity], [1],
     [Intelligence], [0],
     [Weapon], [Bow (type 3)],
     [Armour], [Heavy (type 3)],
@@ -53,12 +53,12 @@ per hit, while the same heavy armour reduces incoming attacks to single digits.
 
 == Stat Rationale
 
-- *Strength 30*: Maximises damage-per-hit. Bow damage = 16 + 30 = 46, yielding
-  46 - 23 = 23 damage against heavy-armour opponents (the common defensive
-  configuration). Health = 50 + 60 = 110, the highest of any strategy.
-- *Dexterity 0*: Minimal investment because the strategy never retreats — it
-  stands and trades at a favourable ratio. The resulting movement of 22 tiles
-  per turn still reaches any enemy on a 20x20 board.
+- *Strength 29*: Near-maximised damage. Bow damage = 16 + 29 = 45, yielding
+  45 - 23 = 22 damage against heavy-armour opponents (the common defensive
+  configuration). Health = 50 + 58 = 108.
+- *Dexterity 1*: A single point trades 2 HP and 1 damage for +1 initiative
+  (d10+DEX turn order) and +1 movement. This gives a small but meaningful
+  edge in mirror matchups — acting first decides who gets the opening shot.
 - *Intelligence 0*: No spell slots. The sniper relies on raw attack damage
   rather than situational spells.
 
@@ -87,9 +87,9 @@ move is always to maximise damage output.
 === Focus-Fire
 
 All three pieces independently target the globally lowest-health enemy. This
-concentrates ~69 damage per round (3 × 23) onto a single target, producing:
+concentrates ~66 damage per round (3 × 22) onto a single target, producing:
 
-- Enemy kill in ~4 hits (90 HP / 23 damage) ≈ 2 round cycles
+- Enemy kill in ~5 hits (90 HP / 22 damage) ≈ 2-3 round cycles
 - Fight snowballs from 3v3 to 3v2, then 3v1
 - Enemy damage output collapses as pieces die
 
@@ -100,7 +100,7 @@ The sniper's heavy armour (resist 23) reduces incoming physical attacks to:
 - Aggressive shortsword: 30 - 23 = 7 damage
 - Warrior shortsword: 34 - 23 = 11 damage
 
-While its bow deals 23 damage per hit to any heavy-armour target. The 3:1 trade
+While its bow deals 22 damage per hit to any heavy-armour target. The 3:1 trade
 ratio means retreating is strictly suboptimal — every turn spent moving instead
 of attacking is a turn the enemy survives longer.
 
@@ -110,11 +110,11 @@ of attacking is a turn the enemy survives longer.
   table(
     columns: (auto, auto, auto),
     [*Metric*], [*Sniper*], [*Aggressive*],
-    [Strength], [30], [20],
+    [Strength], [29], [20],
     [Weapon], [Bow (range 9)], [Shortsword (range 3)],
     [Armour], [Heavy (23 resist)], [Heavy (23 resist)],
-    [Damage vs heavy], [23], [7],
-    [HP], [110], [90],
+    [Damage vs heavy], [22], [7],
+    [HP], [108], [90],
     [AP per turn], [3], [2],
     [Win rate vs each other], [100%], [0%],
   ),
@@ -123,20 +123,20 @@ of attacking is a turn the enemy survives longer.
 
 The sniper's range advantage (9 vs 3) gives it a free shot before the aggressive
 can close to melee. By the time the aggressive reaches shortsword range, the
-sniper has already dealt 23 damage and has a decisive HP advantage (110 vs 67).
+sniper has already dealt 22 damage and has a decisive HP advantage (108 vs 67).
 
 == Strengths and Weaknesses
 
 *Strengths:*
-- Highest per-hit damage in the game (bow 46 base, 23 after heavy armour).
+- Highest per-hit damage in the game (bow 45 base, 22 after heavy armour).
 - Longest effective range of any non-mage (bow range 9).
-- 110 HP makes every piece a tank — no single target can be burst down.
+- 108 HP makes every piece a tank — no single target can be burst down.
 - No reliance on spells or limited resources — consistent output every turn.
 - Simple AI with no positioning bugs (no retreat/kite logic to get wrong).
 
 *Weaknesses:*
-- Low dexterity (2) means poor initiative — acts late in the queue.
-- Movement (23) is slower than light-armour builds (25-32).
+- Low dexterity (1) means poor initiative — often acts late in the queue.
+- Movement (22.5) is slower than light-armour builds (25-32).
 - No area damage — must kill enemies one at a time.
 - Predictable: always attacks the lowest-health enemy, never repositions.
 

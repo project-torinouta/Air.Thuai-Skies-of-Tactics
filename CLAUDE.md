@@ -6,6 +6,10 @@ THUAI9 苍穹棋域 (Skies of Tactics) is a turn-based AI competition game where
 players control 3 pieces each on a grid board. Contestants write Python
 strategies (initialization + per-turn actions) to compete.
 
+The game has been stat-solved: **STR 29 / DEX 1, bow + heavy armour, advance-and-attack**
+is the Pareto-optimal physical build confirmed by benchmarks and 40+ Saiblo
+replays. See `src/strategies/sniper.py`.
+
 ## Project Structure
 
 ```
@@ -32,10 +36,46 @@ src/
 └── strategies/         # Built-in strategies (one file per variant)
     ├── aggressive.py   # Close-range rush strategy
     ├── defensive.py    # Ranged kiting strategy
-    ├── mcts.py         # Monte Carlo Tree Search
-    ├── alpha_beta.py   # Alpha-Beta pruning search
-    └── random.py       # Random delegation
+    ├── mcts.py         # Monte Carlo Tree Search (benchmark only)
+    ├── alpha_beta.py   # Alpha-Beta pruning search (benchmark only)
+    ├── random.py       # Random delegation
+    ├── tactical.py     # Mage kiting strategy
+    ├── warrior.py      # Warrior + Ranger melee/ranged burst
+    ├── sniper.py       # STR 29 / DEX 1 bow + heavy, advance-and-attack (optimal)
+├── sniper_v103.py  # Original STR 30 baseline (comparison)
+    ├── sniper_v102.py  # STR 28 baseline (for comparison benchmarking)
+    └── _utils.py       # Shared helpers (positioning, distance)
+
+script/
+├── run_benchmark.sh    # Benchmark runner (nix-based)
+├── get_replays.py      # Download replays from Saiblo API
+└── get_ai_tokens.py    # Scrape AI tokens from rank list
+
+cli/                    # Nix build outputs (gitignored)
+benchmark/              # Benchmark result markdown files
+replay/                 # Downloaded Saiblo replay JSONs
+changelog/              # Version marker files
 ```
+
+## Build System
+
+Uses Nix flakes for reproducible builds:
+
+```bash
+nix run .#clean          # Remove build/
+nix run .#build          # Zip src/ → build/nightly-latest.zip
+nix run .#documents      # Compile all .typ → PDFs in build/
+```
+
+## Release Workflow
+
+The `release` skill (`/.claude/skills/release/`) automates the full release:
+
+1. `nix run .#clean && nix run .#build && nix run .#documents`
+2. Rename `build/nightly-latest.zip` → `build/v<VERSION>.zip`
+3. `git tag v<VERSION>` and `gh release create` with zip + all PDFs
+
+See `.claude/skills/release/SKILL.md`.
 
 ## Key Conventions
 
