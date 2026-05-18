@@ -17,19 +17,16 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"""Optimised sniper strategy — bow + heavy armour, STR 30, advance-and-attack.
+"""Sniper strategy — bow + heavy armour, focus-fire, stand-and-deliver.
 
-Pareto-optimal physical build within the 30-point attribute budget,
-confirmed by Saiblo replay analysis and 31-board benchmark:
+Designed to counter the aggressive rush strategy by winning every trade:
 
-- STR 30 (max): bow deals 46-23=23 damage per hit, 110 HP
-- DEX 0 is the cost of max STR — initiative is sacrificed but the
-  damage and HP advantages overwhelm it
-- Heavy armour caps incoming attacks: aggressive deals only 7, warrior 11
-- Advance-and-attack: when moving closes distance into bow range, the
-  sniper attacks in the same turn instead of waiting for the next one
+- Bow range 9 outranges shortsword range 3 (free shot before contact)
+- STR 28 + heavy armour: bow deals 44-23=21 damage per hit
+- Aggressive deals only 30-23=7 in return (3:1 damage ratio)
+- HP 106 vs aggressive's 90: tankier on top of higher damage
 - Focus-fire lowest-health enemy: snowball 3v2, 3v1
-- 100% benchmark win rate against all prior strategies
+- No retreat: winning the trade means stand and fight
 """
 
 from typing import Callable, List
@@ -39,10 +36,11 @@ from strategies._utils import allocate_init_positions, calculate_distance
 from utils import ActionSet, AttackContext, PieceArg, Point
 
 
-def get_sniper_init_strategy() -> Callable[..., List[PieceArg]]:
-    """Return the optimised sniper initialisation strategy.
+def get_sniper_init_strategy_v102() -> Callable[..., List[PieceArg]]:
+    """Return a sniper initialisation strategy.
 
-    Each piece: STR 30 (max), bow + heavy armour, minimum dexterity.
+    Each piece is a bow-wielding heavy-armour fighter: STR 28 for
+    maximum damage, minimal dexterity since we stand and trade.
 
     :returns: A callable that takes an ``InitGameMessage`` and returns
         a list of ``PieceArg``.
@@ -67,8 +65,8 @@ def get_sniper_init_strategy() -> Callable[..., List[PieceArg]]:
         piece_args: List[PieceArg] = []
         for pos in positions:
             arg = PieceArg()
-            arg.strength = 30
-            arg.dexterity = 0
+            arg.strength = 28
+            arg.dexterity = 2
             arg.intelligence = 0
             arg.equip = Point(3, 3)
             arg.pos = pos
@@ -78,14 +76,12 @@ def get_sniper_init_strategy() -> Callable[..., List[PieceArg]]:
     return strategy
 
 
-def get_sniper_action_strategy() -> Callable[..., ActionSet]:
-    """Return the optimised sniper action strategy.
+def get_sniper_action_strategy_v102() -> Callable[..., ActionSet]:
+    """Return a sniper action strategy.
 
-    1. Focus-fire the lowest-health enemy within bow range
-    2. If no enemy is in range, advance toward the lowest-health enemy.
-       If the move brings the target into bow range, attack in the
-       same turn (advance-and-attack) instead of waiting.
-    3. Never retreat — the sniper wins every damage trade decisively.
+    1. Focus-fire the lowest-health enemy in bow range
+    2. Advance only when no enemy is in bow range
+    3. Never retreat (we win the damage trade decisively)
 
     :returns: A callable action strategy.
     :rtype: Callable
@@ -134,20 +130,10 @@ def get_sniper_action_strategy() -> Callable[..., ActionSet]:
                 )
                 action.move = True
                 action.move_target = best_move
-
-                # Advance-and-attack: if moving brings the target into
-                # bow range, attack in the same turn
-                new_dist = calculate_distance(best_move, primary.position)
-                if new_dist <= current.attack_range:
-                    action.attack = True
-                    action.attack_context = AttackContext()
-                    action.attack_context.attacker = current
-                    action.attack_context.target = primary
-                else:
-                    action.attack = False
             else:
                 action.move = False
-                action.attack = False
+
+            action.attack = False
 
         action.spell = False
         return action
