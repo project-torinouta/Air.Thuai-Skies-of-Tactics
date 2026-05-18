@@ -26,8 +26,7 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_DIR/src"
 
-ROUNDS_FAST=${1:-30}
-ROUNDS_SLOW=${2:-10}
+ROUNDS=${1:-30}
 
 BOARD_OPTS="--board-dir BoardCase/ --max-game-rounds 60 --seed 42"
 
@@ -55,40 +54,50 @@ run() {
 }
 
 echo "=== Standard ===" >&2
-run aggressive aggressive defensive defensive "$ROUNDS_FAST"
-run aggressive aggressive random random "$ROUNDS_FAST"
-run defensive defensive aggressive aggressive "$ROUNDS_FAST"
-run defensive defensive random random "$ROUNDS_FAST"
-run random random aggressive aggressive "$ROUNDS_FAST"
-run random random defensive defensive "$ROUNDS_FAST"
+run aggressive aggressive defensive defensive "$ROUNDS"
+run aggressive aggressive random random "$ROUNDS"
+run defensive defensive aggressive aggressive "$ROUNDS"
+run defensive defensive random random "$ROUNDS"
+run random random aggressive aggressive "$ROUNDS"
+run random random defensive defensive "$ROUNDS"
 
 echo "=== Tactical ===" >&2
-run tactical tactical aggressive aggressive "$ROUNDS_FAST"
-run tactical tactical defensive defensive "$ROUNDS_FAST"
-run tactical tactical random random "$ROUNDS_FAST"
+run tactical tactical aggressive aggressive "$ROUNDS"
+run tactical tactical defensive defensive "$ROUNDS"
+run tactical tactical random random "$ROUNDS"
 
 echo "=== Warrior ===" >&2
-run warrior warrior aggressive aggressive "$ROUNDS_FAST"
-run warrior warrior defensive defensive "$ROUNDS_FAST"
-run warrior warrior random random "$ROUNDS_FAST"
+run warrior warrior aggressive aggressive "$ROUNDS"
+run warrior warrior defensive defensive "$ROUNDS"
+run warrior warrior random random "$ROUNDS"
 
 echo "=== Ranger ===" >&2
-run ranger ranger aggressive aggressive "$ROUNDS_FAST"
-run ranger ranger defensive defensive "$ROUNDS_FAST"
-run ranger ranger random random "$ROUNDS_FAST"
+run ranger ranger aggressive aggressive "$ROUNDS"
+run ranger ranger defensive defensive "$ROUNDS"
+run ranger ranger random random "$ROUNDS"
 
 echo "=== Sniper ===" >&2
-run sniper sniper aggressive aggressive "$ROUNDS_FAST"
-run sniper sniper defensive defensive "$ROUNDS_FAST"
-run sniper sniper warrior warrior "$ROUNDS_FAST"
-run sniper sniper tactical tactical "$ROUNDS_FAST"
-run sniper sniper ranger ranger "$ROUNDS_FAST"
-run sniper sniper random random "$ROUNDS_FAST"
+run sniper sniper aggressive aggressive "$ROUNDS"
+run sniper sniper defensive defensive "$ROUNDS"
+run sniper sniper warrior warrior "$ROUNDS"
+run sniper sniper tactical tactical "$ROUNDS"
+run sniper sniper ranger ranger "$ROUNDS"
+run sniper sniper random random "$ROUNDS"
+
+echo "=== Sniper_v102 ===" >&2
+run sniper_v102 sniper_v102 aggressive aggressive "$ROUNDS"
+run sniper_v102 sniper_v102 defensive defensive "$ROUNDS"
+run sniper_v102 sniper_v102 warrior warrior "$ROUNDS"
+run sniper_v102 sniper_v102 tactical tactical "$ROUNDS"
+run sniper_v102 sniper_v102 ranger ranger "$ROUNDS"
+run sniper_v102 sniper_v102 random random "$ROUNDS"
 
 echo "=== Cross ===" >&2
-run tactical tactical ranger ranger "$ROUNDS_FAST"
-run warrior warrior tactical tactical "$ROUNDS_FAST"
-run ranger ranger warrior warrior "$ROUNDS_FAST"
-run aggressive aggressive sniper sniper "$ROUNDS_FAST"
+run tactical tactical ranger ranger "$ROUNDS"
+run warrior warrior tactical tactical "$ROUNDS"
+run ranger ranger warrior warrior "$ROUNDS"
+run aggressive aggressive sniper sniper "$ROUNDS"
+run sniper sniper sniper_v102 sniper_v102 "$ROUNDS"
+run sniper_v102 sniper_v102 sniper sniper "$ROUNDS"
 
 echo "=== Done ===" >&2
