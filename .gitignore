@@ -7,8 +7,9 @@
 
 # Project specific directories
 
-## The board file
-**/BoardCase
+## Board files (only track case1.txt for CI)
+**/BoardCase/*
+!src/BoardCase/case1.txt
 ## The build output directory
 **/build
 ## The pdf output of Typst document
