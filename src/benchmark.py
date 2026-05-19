@@ -17,30 +17,18 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"""Benchmark script for comparing AI strategies head-to-head.
-
-Runs multiple games between strategy pairings (single or round-robin)
-and reports win/loss/draw statistics. Supports multiple board files
-and random board generation.
+"""Benchmark script — thin wrapper around the ``benchmark`` package.
 
 Usage:
-    python benchmark.py                                 # Full round-robin, 10 rounds each
-    python benchmark.py --rounds 50                     # 50 games per matchup
-    python benchmark.py --p1 aggressive --p2 defensive  # Single matchup
-    python benchmark.py --board-dir BoardCase/          # Use all boards in directory
-    python benchmark.py --generate-boards 20            # Generate 20 random boards
-    python benchmark.py --generate-boards 10 --board-rows 16 --board-cols 16
+    python benchmark.py                                 # Full round-robin
+    python benchmark.py --p1 sniper --p2 defensive      # Single matchup
+    python benchmark.py --chart curve.png               # Win-rate line chart
+    python benchmark.py --chart-only curve.png           # Re-plot cached results
 """
 
-import argparse
-import contextlib
-import glob
-import itertools
-import os
-import random
-import sys
-from typing import Callable, Dict, List, Optional, Tuple
+from benchmark.__main__ import main
 
+<<<<<<< Updated upstream
 from env import Environment
 from strategies.aggressive import (
     get_aggressive_action_strategy,
@@ -789,3 +777,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+=======
+main()
+>>>>>>> Stashed changes
