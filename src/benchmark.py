@@ -40,9 +40,37 @@ from strategies.defensive import (
     get_defensive_init_strategy,
 )
 from strategies.mcts import get_mcts_action_strategy
+from ml.mcts_improved import get_improved_mcts_strategy
 from strategies.random import (
     get_random_action_strategy,
     get_random_init_strategy,
+)
+from strategies.tactical import (
+    get_tactical_action_strategy,
+    get_tactical_init_strategy,
+)
+# This import is for benchmark of strength sweet point
+from strategies.sniper_v102 import (
+    get_sniper_init_strategy_v102,
+    get_sniper_action_strategy_v102
+)
+from strategies.sniper_v103 import (
+    get_sniper_init_strategy_v103,
+    get_sniper_action_strategy_v103
+)
+from strategies.sniper import (
+    get_sniper_action_strategy,
+    get_sniper_init_strategy,
+)
+from strategies.ml_sniper import (
+    get_ml_sniper_action_strategy,
+    get_ml_sniper_init_strategy,
+)
+from strategies.warrior import (
+    get_warrior_action_strategy,
+    get_warrior_init_strategy,
+    get_ranger_action_strategy,
+    get_ranger_init_strategy,
 )
 from utils import ActionSet, PieceArg
 
@@ -52,22 +80,45 @@ STRATEGY_NAMES: List[str] = [
     "aggressive",
     "defensive",
     "mcts",
+    "mcts_improved",
     "alpha_beta",
+    "tactical",
+    "warrior",
+    "ranger",
     "random",
+    "sniper",
+    "sniper_v102",
+    "sniper_v103",
+    "ml_sniper",
 ]
 
 INIT_NAMES: List[str] = [
     "aggressive",
     "defensive",
+    "tactical",
+    "warrior",
+    "ranger",
     "random",
+    "sniper",
+    "sniper_v102",
+    "sniper_v103",
+    "ml_sniper",
 ]
 
 ACTION_NAMES: List[str] = [
     "aggressive",
     "defensive",
     "mcts",
+    "mcts_improved",
     "alpha_beta",
+    "tactical",
+    "warrior",
+    "ranger",
     "random",
+    "sniper",
+    "sniper_v102",
+    "sniper_v103",
+    "ml_sniper",
 ]
 
 _GENERATED_BOARD_DIR: str = "BoardCase"
@@ -86,6 +137,20 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_aggressive_init_strategy()
     if name == "defensive":
         return get_defensive_init_strategy()
+    if name == "tactical":
+        return get_tactical_init_strategy()
+    if name == "warrior":
+        return get_warrior_init_strategy()
+    if name == "ranger":
+        return get_ranger_init_strategy()
+    if name == "sniper":
+        return get_sniper_init_strategy()
+    if name == "sniper_v102":
+        return get_sniper_init_strategy_v102()
+    if name == "sniper_v103":
+        return get_sniper_init_strategy_v103()
+    if name == "ml_sniper":
+        return get_ml_sniper_init_strategy()
     if name == "random":
         return get_random_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
@@ -115,8 +180,24 @@ def get_action_strategy(
         return get_defensive_action_strategy()
     if name == "mcts":
         return get_mcts_action_strategy(mcts_simulations)
+    if name == "mcts_improved":
+        return get_improved_mcts_strategy(simulation_count=200)
     if name == "alpha_beta":
         return get_alpha_beta_action_strategy(alpha_beta_depth)
+    if name == "tactical":
+        return get_tactical_action_strategy()
+    if name == "warrior":
+        return get_warrior_action_strategy()
+    if name == "ranger":
+        return get_ranger_action_strategy()
+    if name == "sniper":
+        return get_sniper_action_strategy()
+    if name == "sniper_v102":
+        return get_sniper_action_strategy_v102()
+    if name == "sniper_v103":
+        return get_sniper_action_strategy_v103()
+    if name == "ml_sniper":
+        return get_ml_sniper_action_strategy()
     if name == "random":
         return get_random_action_strategy()
     raise ValueError(f"Unknown action strategy: {name}")

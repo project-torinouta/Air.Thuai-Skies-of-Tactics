@@ -13,6 +13,12 @@
 ## ML weight files
 **/weights/*
 !src/weights/ml_sniper_best*.npy
+## Board files (only track case1.txt for CI)
+**/BoardCase/*
+!src/BoardCase/case1.txt
+## ML weight files
+**/weights/*
+!src/weights/ml_sniper_best*.npy
 ## The build output directory
 **/build
 ## The pdf output of Typst document

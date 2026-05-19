@@ -1,6 +1,6 @@
 [project]
 name = "air-thuai-skies-of-tactics"
-version = "0.1.0"
+version = "0.2.0"
 description = "The project for THUAI-9 Skies of Tactics competition"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -32,6 +32,7 @@ dependencies = [
     "nvidia-nvjitlink==13.0.88",
     "nvidia-nvshmem-cu13==3.4.5",
     "nvidia-nvtx==13.0.85",
+    "requests>=2.34.2",
     "setuptools==81.0.0",
     "sympy==1.14.0",
     "torch==2.12.0",

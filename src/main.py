@@ -17,15 +17,10 @@ import sys
 from env import Environment, InitGameMessage, Player
 from json_converter import action_to_dict, env_from_state_json
 from saiblo_client import SaibloClient
-from strategies.aggressive import (
-    get_aggressive_init_strategy,
-    get_aggressive_action_strategy,
+from strategies.ml_sniper import (
+    get_ml_sniper_init_strategy,
+    get_ml_sniper_action_strategy
 )
-from strategies.defensive import (
-    get_defensive_init_strategy,
-    get_defensive_action_strategy,
-)
-from strategies.mcts import get_mcts_action_strategy
 from utils import ActionSet
 
 ERROR_MAP = ["RE", "TLE", "OLE"]
@@ -66,7 +61,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="THUAI9 Saiblo Client")
     parser.add_argument(
         "--strategy",
-        choices=["aggressive", "defensive", "mcts"],
+        choices=["aggressive", "defensive", "mcts", "alpha_beta", "tactical"],
         default="aggressive",
         help="AI strategy to use (default: aggressive)",
     )
@@ -93,19 +88,11 @@ def run() -> None:
     action sets to stdout. Handles handshake, state deserialisation,
     strategy invocation, and error reporting.
     """
+
     args = parse_args()
 
-    if args.strategy == "aggressive":
-        action_strategy = get_aggressive_action_strategy()
-        init_strategy = get_aggressive_init_strategy()
-    elif args.strategy == "defensive":
-        action_strategy = get_defensive_action_strategy()
-        init_strategy = get_defensive_init_strategy()
-    else:
-        action_strategy = get_mcts_action_strategy(
-            args.mcts_simulations
-        )
-        init_strategy = get_defensive_init_strategy()
+    action_strategy = get_ml_sniper_action_strategy()
+    init_strategy = get_ml_sniper_init_strategy()
 
     env = Environment(local_mode=False, if_log=0)
     env.init_board_only()
