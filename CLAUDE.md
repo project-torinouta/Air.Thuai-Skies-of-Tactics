@@ -26,7 +26,8 @@ docs/
     ├── alpha_beta.typ
     ├── tactical.typ
     ├── warrior.typ
-    └── sniper.typ
+    ├── sniper.typ
+    └── ml_sniper.typ
 
 src/
 ├── utils.py            # Core types: Point, ActionSet, PieceArg, Spell, enums
@@ -42,6 +43,12 @@ src/
 ├── benchmark.py        # Head-to-head strategy benchmark
 ├── pyproject.toml      # Project config with ruff/mypy
 ├── BoardCase/          # Board definition files
+├── ml/                 # ML pipeline (ES-optimised policy)
+│   ├── state_encoder.py
+│   ├── policy_net.py
+│   ├── action_decoder.py
+│   ├── es_optimizer.py
+│   └── train_evolution.py
 └── strategies/         # Built-in strategies (one file per variant)
     ├── aggressive.py   # Close-range rush strategy
     ├── defensive.py    # Ranged kiting strategy
@@ -51,8 +58,9 @@ src/
     ├── tactical.py     # Mage kiting strategy
     ├── warrior.py      # Warrior + Ranger melee/ranged burst
     ├── sniper.py       # STR 29 / DEX 1 bow + heavy, advance-and-attack (optimal)
-├── sniper_v103.py  # Original STR 30 baseline (comparison)
     ├── sniper_v102.py  # STR 28 baseline (for comparison benchmarking)
+    ├── sniper_v103.py  # Original STR 30 baseline (comparison)
+    ├── ml_sniper.py    # ES-optimised: ~55% win rate vs optimal
     └── _utils.py       # Shared helpers (positioning, distance)
 
 script/

@@ -152,6 +152,7 @@ The project includes **7 built-in strategies** ranging from simple to optimised:
 | **Sniper** 🏆     | `sniper.py`      | STR 29, DEX 1, bow+heavy | Refined initiative tank  |  **100%**  |
 | **Sniper v1.0.3** | `sniper_v103.py` | STR 30, bow+heavy        | Original STR 30 baseline |     —      |
 | **Sniper v1.0.2** | `sniper_v102.py` | STR 28, bow+heavy        | Previous optimum         |     —      |
+| **ML Sniper**     | `ml_sniper.py`   | STR 29, DEX 1, bow+heavy | ES-optimised tactics     |  **55%**   |
 | **Warrior**       | `warrior.py`     | STR 24, shortsword+light | Melee burst              |   0–90%    |
 | **Ranger**        | `warrior.py`     | STR 22, bow+light        | Ranged damage            |  13–100%   |
 | **Tactical**      | `tactical.py`    | STR 14, staff+light      | Mage kiting              |   0–17%    |
@@ -194,7 +195,14 @@ order) and +1 movement — a net positive in mirror matchups.
 │   ├── json_converter.py   # State serialisation
 │   ├── pyproject.toml      # Ruff, mypy config
 │   ├── BoardCase/          # Board definition files
+│   ├── ml/                   # ML pipeline (ES-optimised policy)
+│   │   ├── state_encoder.py  #   Environment → feature vector
+│   │   ├── policy_net.py     #   2-layer NN in pure NumPy
+│   │   ├── action_decoder.py #   Network output → ActionSet
+│   │   ├── es_optimizer.py   #   Diagonal CMA-ES
+│   │   └── train_evolution.py#   Training script
 │   └── strategies/         # Built-in AI strategies
+│       ├── ml_sniper.py    # ★ ES-optimised: ~55% win rate vs optimal
 │       ├── sniper.py       # ★ Optimal: STR 29/DEX 1, bow+heavy
 │       ├── aggressive.py   # Rush damage
 │       ├── defensive.py    # Kiting
