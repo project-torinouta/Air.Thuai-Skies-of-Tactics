@@ -120,26 +120,30 @@ def main() -> None:
             print("  No new matches.")
 
     if not raw_replays:
-        print("Error: no replays found. Specify --username or --replay-dir.")
-        sys.exit(1)
-
-    if not raw_replays:
         print("No replays found.")
         sys.exit(0)
 
-    print(f"Loaded {len(raw_replays)} replay(s).")
-
-    # --- Step 2: Parse and compute indicators ---
+    # --- Step 2: Parse and compute indicators, skip empties ---
     parsed = []
     all_indicators = []
     labels: List[str] = []
+    skipped = 0
 
     for opponent, match_id, data in raw_replays:
         replay = parse_replay(data, match_id, opponent)
+        if replay.rounds[-1].round_number == 0 if replay.rounds else True:
+            skipped += 1
+            continue
         parsed.append(replay)
         ind = compute_indicators(replay)
         all_indicators.append(ind)
         labels.append(f"{opponent} #{match_id}")
+
+    print(f"Loaded {len(raw_replays)} replay(s), "
+          f"{len(all_indicators)} with data ({skipped} empty).")
+    if not all_indicators:
+        print("No valid replays to analyze.")
+        sys.exit(0)
 
     # --- Step 3: Print summary table ---
     _print_indicator_table(all_indicators, labels)
