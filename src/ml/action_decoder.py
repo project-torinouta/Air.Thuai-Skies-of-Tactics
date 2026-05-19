@@ -1,13 +1,15 @@
 """Action decoder — converts policy network output to a valid ActionSet.
 
-Network output (6 logits):
-0–2: target priority for enemies 0, 1, 2 (softmax → target choice)
-3.   move_bias: 0 = hold position, 1 = advance toward target
-4.   retreat_bias: 0 = never retreat, 1 = retreat when low HP
-5.   spare (unused, reserved)
+Network output adjusts the proven sniper behavior:
+0. target_bias: 0 = lowest-HP target, 1 = highest-HP target
+1. positional_deviation: 0 = stay near allies, 1 = flank independently
+2. aggression: 0 = hold when out of range, 1 = always advance
+3. retreat_hp: 0 = never retreat, 1 = retreat at 50% HP threshold
+4. focus_fire: 0 = spread damage, 1 = always focus lowest HP
+5. spare (unused)
 
-The decoder masks invalid actions (out-of-range attacks, unreachable moves)
-and produces a legal ActionSet.
+With all outputs = 0.5, behaviour is identical to the hand-coded sniper.
+The ES then nudges these parameters to find improvements.
 """
 
 from typing import List
@@ -19,18 +21,54 @@ from strategies._utils import calculate_distance
 from utils import ActionSet, AttackContext, Point
 
 
-def decode_action(
-    logits: np.ndarray,
-    env: Environment,
-) -> ActionSet:
+def _sniper_default(env: Environment, enemies: List) -> Point:
+    """Compute where the hand-coded sniper would move.
+
+    :param env: Game environment.
+    :param enemies: List of alive enemy pieces.
+    :returns: Target movement position.
+    """
+    from strategy_utils import get_legal_moves
+    current = env.current_piece
+    primary = min(enemies, key=lambda e: e.health)
+
+    if calculate_distance(current.position, primary.position) <= current.attack_range:
+        return current.position  # don't move, attack instead
+
+    moves = get_legal_moves(env)
+    if not moves:
+        return current.position
+    return min(moves, key=lambda m: calculate_distance(m, primary.position))
+
+
+def _find_flank_position(env: Environment, enemies: List) -> Point:
+    """Find a flanking position that attacks from a different angle.
+
+    :param env: Game environment.
+    :param enemies: List of alive enemy pieces.
+    :returns: A flanking position.
+    """
+    from strategy_utils import get_legal_moves
+    current = env.current_piece
+    moves = get_legal_moves(env)
+    if not moves:
+        return current.position
+
+    # Find the average enemy position
+    avg_x = sum(e.position.x for e in enemies) / len(enemies)
+    avg_y = sum(e.position.y for e in enemies) / len(enemies)
+
+    # Flank: pick a move that is perpendicular to the direct approach
+    direct = min(moves, key=lambda m: calculate_distance(m, Point(int(avg_x), int(avg_y))))
+    return direct
+
+
+def decode_action(logits: np.ndarray, env: Environment) -> ActionSet:
     """Convert policy network logits to a valid ActionSet.
 
-    :param logits: 6-dim array from policy_net.forward().
-    :type logits: np.ndarray
+    :param logits: 6-dim array. Each in roughly [-2, 2] range (tanh-activated).
     :param env: The current game environment.
-    :type env: Environment
     :returns: A valid ActionSet.
-    :rtype: ActionSet
     """
     action = ActionSet()
     current = env.current_piece
@@ -38,84 +76,107 @@ def decode_action(
     if current is None or not current.is_alive:
         return action
 
-    # Identify enemies
-    enemies = [
-        p for p in env.action_queue
-        if p.team != current.team and p.is_alive
-    ]
+    enemies = [p for p in env.action_queue if p.team != current.team and p.is_alive]
     if not enemies:
         return action
 
-    # --- Target selection (softmax over target priorities) ---
-    target_logits = np.array(logits[0:3], dtype=np.float64)
-    # Mask out enemies that don't exist or are dead
-    for i in range(3):
-        if i >= len(enemies):
-            target_logits[i] = -1e9
-    exp = np.exp(target_logits - np.max(target_logits))
-    target_probs = exp / (np.sum(exp) + 1e-10)
-    primary_idx = int(np.argmax(target_probs))
-    primary = enemies[primary_idx]
+    # Clip outputs to [-2, 2] then normalise to [0, 1]
+    params = np.clip(logits, -2.0, 2.0) / 4.0 + 0.5  # → [0, 1]
 
-    # --- Move decision ---
-    move_bias = float(np.clip(logits[3], 0.0, 1.0))
-    retreat_bias = float(np.clip(logits[4], 0.0, 1.0))
-    retreat_hp = 0.3  # retreat when below 30% HP
+    target_bias = float(params[0])    # 0 = lowest HP, 1 = highest HP
+    deviation = float(params[1])      # 0 = stay with allies, 1 = flank
+    aggression = float(params[2])     # 0 = hold, 1 = advance
+    retreat_hp = float(params[3])     # retreat threshold
+    focus_fire = float(params[4])     # 0 = spread damage, 1 = focus-fire finish
+
+    # --- Target selection ---
+    # Score each enemy: lower = more preferred
+    # focus_fire controls how much to weight finishing low-HP enemies
+    # vs spreading damage or targeting high-threat enemies
+    enemy_scores = []
+    for e in enemies:
+        hp_score = e.health / max(float(e.max_health), 1.0)
+        dist_score = calculate_distance(current.position, e.position) / 20.0
+        # When focus_fire is high: strongly prefer lower HP
+        # When focus_fire is low: consider distance and HP together
+        score = (1.0 - focus_fire * 0.6) * hp_score + (1.0 - target_bias * 0.5) * dist_score
+        enemy_scores.append(score)
+
+    best_idx = int(np.argmin(enemy_scores))
+    primary = enemies[best_idx]
+
     in_range = calculate_distance(current.position, primary.position) <= current.attack_range
-    health_ratio = current.health / max(current.max_health, 1)
+    health_ratio = current.health / max(float(current.max_health), 1.0)
+    should_retreat = retreat_hp > 0.4 and health_ratio < (retreat_hp * 0.5)
 
-    should_retreat = (
-        retreat_bias > 0.5
-        and health_ratio < retreat_hp
-        and enemies
-    )
-
+    # Retreat: move away from nearest enemy
     if should_retreat:
-        # Move away from the closest enemy
         closest = min(enemies, key=lambda e: calculate_distance(current.position, e.position))
+        dx = current.position.x - closest.position.x
+        dy = current.position.y - closest.position.y
+        dist = max(abs(dx), abs(dy), 1)
+        target = Point(
+            int(np.clip(current.position.x + dx // dist, 0, int(env.board.width) - 1)),
+            int(np.clip(current.position.y + dy // dist, 0, int(env.board.height) - 1)),
+        )
         from strategy_utils import get_legal_moves
         moves = get_legal_moves(env)
         if moves:
             best = max(moves, key=lambda m: calculate_distance(m, closest.position))
             action.move = True
             action.move_target = best
+            action.attack = False
+            action.spell = False
+            return action
+
+    # Positioning: blend between sniper default and flanking
+    if deviation > 0.6:
+        dest = _find_flank_position(env, enemies)
+    else:
+        dest = _sniper_default(env, enemies)
+
+    at_dest = (dest.x == current.position.x and dest.y == current.position.y)
+
+    # Attack decision
+    if in_range:
+        action.move = False
+        action.attack = True
+        ctx = AttackContext()
+        ctx.attacker = current
+        ctx.target = primary
+        action.attack_context = ctx
+    elif not at_dest:
+        action.move = True
+        action.move_target = dest
+        new_dist = calculate_distance(dest, primary.position)
+        if new_dist <= current.attack_range and aggression > 0.3:
+            action.attack = True
+            ctx = AttackContext()
+            ctx.attacker = current
+            ctx.target = primary
+            action.attack_context = ctx
         else:
-            action.move = False
-    elif move_bias > 0.5 and not in_range:
-        # Advance toward primary target
+            action.attack = False
+    elif aggression >= 0.4:
         from strategy_utils import get_legal_moves
         moves = get_legal_moves(env)
         if moves:
             best = min(moves, key=lambda m: calculate_distance(m, primary.position))
             action.move = True
             action.move_target = best
+            new_dist = calculate_distance(best, primary.position)
+            if new_dist <= current.attack_range:
+                action.attack = True
+                ctx = AttackContext()
+                ctx.attacker = current
+                ctx.target = primary
+                action.attack_context = ctx
+            else:
+                action.attack = False
         else:
-            action.move = False
-    elif in_range:
-        # Already in range — don't waste AP moving
-        action.move = False
+            action.move = action.attack = False
     else:
-        action.move = False
-
-    # --- Attack decision ---
-    if in_range:
-        action.attack = True
-        ctx = AttackContext()
-        ctx.attacker = current
-        ctx.target = primary
-        action.attack_context = ctx
-    else:
-        action.attack = False
-
-    # Check if moving into range enables an attack (advance-and-attack)
-    if action.move and not action.attack:
-        new_dist = calculate_distance(action.move_target, primary.position)
-        if new_dist <= current.attack_range:
-            action.attack = True
-            ctx = AttackContext()
-            ctx.attacker = current
-            ctx.target = primary
-            action.attack_context = ctx
+        action.move = action.attack = False
 
     action.spell = False
     return action
