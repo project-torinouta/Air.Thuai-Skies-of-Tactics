@@ -1127,8 +1127,6 @@ wheels = [
 ]
 
 [[package]]
-<<<<<<< Updated upstream
-=======
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -1156,7 +1154,6 @@ wheels = [
 ]
 
 [[package]]
->>>>>>> Stashed changes
 name = "setuptools"
 version = "81.0.0"
 source = { registry = "https://pypi.org/simple" }
