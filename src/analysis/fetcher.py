@@ -1,3 +1,22 @@
+# Copyright 2026 AshGrey <ashgrey.huaier@gmail.com>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in the
+# Software without restriction, including without limitation the rights to use, copy,
+# modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+# and to permit persons to whom the Software is furnished to do so, subject to the
+# following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 """Download match replays from the Saiblo API."""
 
 import json
@@ -12,41 +31,97 @@ API_BASE = "https://api.saiblo.net"
 MATCHES_URL = f"{API_BASE}/api/matches/"
 
 
-def fetch_match_list(
+def fetch_all_matches(
     username: str,
     token: str,
-    limit: int = 50,
-    offset: int = 0,
+    max_games: int = 200,
 ) -> List[Dict]:
-    """Fetch the list of matches for a given username.
+    """Fetch all matches for a user, paginating through offsets.
 
     :param username: Saiblo username.
     :type username: str
     :param token: Saiblo API token.
     :type token: str
-    :param limit: Max matches to fetch (default: 50).
-    :type limit: int
-    :param offset: Pagination offset (default: 0).
-    :type offset: int
+    :param max_games: Maximum games to fetch (default: 200).
+    :type max_games: int
     :returns: List of match result dicts.
     :rtype: List[Dict]
-    :raises requests.HTTPError: If the API request fails.
     """
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/json, text/plain, */*",
     }
-    params = {"limit": str(limit), "offset": str(offset), "username": username}
-    resp = requests.get(MATCHES_URL, headers=headers, params=params, timeout=30)
-    resp.raise_for_status()
-    return resp.json().get("results", [])
+    all_results: List[Dict] = []
+    offset = 0
+    limit = 50
+
+    while len(all_results) < max_games:
+        try:
+            params = {
+                "limit": str(limit),
+                "offset": str(offset),
+                "username": username
+            }
+            # When the all results if less than our wanted max games we still need
+            # to gain complete information, so `offset += limit`
+
+            resp = requests.get(MATCHES_URL, headers=headers, params=params, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            results = data.get("results", [])
+
+            if not results:
+                # When we encounter the last pagination
+                break
+
+            all_results.extend(results)
+            offset += limit
+        except requests.HTTPError as e:
+            print(f"Something error happened when requesting for {MATCHES_URL}")
+
+    return all_results[:max_games]
+
+
+def _extract_player_ai(player: Dict) -> Tuple[str, int]:
+    """Extract AI name and version from a player info dict.
+
+    :param player: They player's info
+    :type player: Dict
+    :returns: `(entity_name, version)` from the `code` block.
+    :rtype: Tuple[str, int]
+    """
+    code = player.get("code", {})
+    if isinstance(code, dict):
+        return code.get("entity", ""), code.get("version", 0)
+        # entity is the name of user's AI
+    return "", 0
+
+
+def _extract_user_info(user: str, players: List[Dict]) -> Tuple[str, str]:
+    """Extract user's username and camp from info dict.
+
+    :param user: The username of user
+    :type user: str
+    :param players: The list of player
+    :type players: List[Dict]
+    :returns: `(user, user_camp)` from the `info` block.
+    :rtype: Tuple[str, str]
+    """
+    for idx, player in enumerate(players):
+        username = player.get("user", {}).get("username", "")
+        if username == user:
+            if idx == 0:
+                return user, "Red"
+            elif idx == 1:
+                return user, "Blue"
 
 
 def download_replay(
     match_data: Dict,
     token: str,
     output_dir: str,
-) -> Optional[Tuple[str, int]]:
+    player_name: str
+) -> Optional[Tuple[str, int, str, str, int, int]]:
     """Download a single replay JSON and save to disk.
 
     :param match_data: Match dict from ``fetch_match_list``.
@@ -55,22 +130,35 @@ def download_replay(
     :type token: str
     :param output_dir: Directory to save the replay file.
     :type output_dir: str
-    :returns: ``(opponent_name, match_id)`` or None if skipped.
-    :rtype: Optional[Tuple[str, int]]
+    :param player_name: Analyzed player's username.
+    :type player_name: str
+    :returns: ``(my_entity, my_version, opponent_name, opp_entity, opp_version, match_id)``
+        or None if skipped.
+    :rtype: Optional[Tuple[str, str, int, str, int, int]]
     """
     state = match_data.get("state", "")
     if state != "评测成功":
         return None
 
     players = match_data.get("info", [])
+    # players are two players in one game
+
+    my_entity = ""
+    my_version = 0
     opponent = ""
+    opp_entity = ""
+    opp_version = 0
+
     for player in players:
         uname = player.get("user", {}).get("username", "")
-        if uname != "ashgrey":
+        if uname == player_name:
+            my_entity, my_version = _extract_player_ai(player)
+        else:
             if opponent:
                 opponent += "-" + uname
             else:
                 opponent = uname
+                opp_entity, opp_version = _extract_player_ai(player)
 
     if not opponent:
         return None
@@ -82,15 +170,19 @@ def download_replay(
         "Authorization": f"Bearer {token}",
         "Accept": "application/json, text/plain, */*",
     }
-    resp = requests.get(download_url, headers=headers, timeout=30)
-    resp.raise_for_status()
+    try:
+        resp = requests.get(download_url, headers=headers, timeout=30)
+        resp.raise_for_status()
 
-    os.makedirs(output_dir, exist_ok=True)
-    fpath = os.path.join(output_dir, f"{opponent}-{match_id}.json")
-    with open(fpath, "w") as f:
-        json.dump(resp.json(), f, indent=2)
+        os.makedirs(output_dir, exist_ok=True)
+        fpath = os.path.join(output_dir, f"{opponent}-{match_id}.json")
+        with open(fpath, "w") as f:
+            json.dump(resp.json(), f, indent=2)
 
-    return opponent, match_id
+        return my_entity, my_version, opponent, opp_entity, opp_version, match_id
+    except requests.HTTPError as e:
+        print(f"Something error happened when requesting for {download_url}")
+        return "", 0, "", "", 0, 0
 
 
 def load_local_replays(replay_dir: str) -> List[Tuple[str, int, dict]]:
@@ -104,7 +196,7 @@ def load_local_replays(replay_dir: str) -> List[Tuple[str, int, dict]]:
     :rtype: List[Tuple[str, int, dict]]
     """
     results: List[Tuple[str, int, dict]] = []
-    pattern = re.compile(r"(\w+)-(\d+)\.json")
+    pattern = re.compile(r"^(.+)-(\d+)\.json$")
 
     for fname in sorted(os.listdir(replay_dir)):
         match = pattern.match(fname)
