@@ -158,16 +158,15 @@ class TestActionDecoder(unittest.TestCase):
         from utils import ActionSet
         self.assertIsInstance(action, ActionSet)
 
-    def test_decode_with_high_move_bias_moves(self):
-        """move_bias > 0.5 and enemy out of range → move."""
+    def test_decode_moves_toward_target_position(self):
+        """Target position far from current → move toward it."""
         env = _make_minimal_env()
-        # Enemy at (12, 5), current at (5, 5), range is 9, distance is 7
-        # Actually distance = 7, range = 9 → in range!
-        # Move enemy further out
+        # Place enemy far, and set target to a position far from current
         for p in env.action_queue:
             if p.team != env.current_piece.team:
-                p.position = Point(18, 18)  # distance = 26 > 9
-        logits = np.array([0.0, 0.0, 0.0, 0.8, 0.0, 0.0], dtype=np.float64)
+                p.position = Point(18, 18)
+        # Target position (15, 15) — far from current (5, 5)
+        logits = np.array([0.8, 0.8, 0.0, 0.8, 0.0, 0.0], dtype=np.float64)
         action = decode_action(logits, env)
         self.assertTrue(action.move)
 
@@ -187,50 +186,30 @@ class TestActionDecoder(unittest.TestCase):
         self.assertTrue(action.attack)
 
     def test_decode_no_attack_when_out_of_range(self):
-        """Enemy out of range → no attack."""
+        """Enemy out of range + low aggression → no attack."""
         env = _make_minimal_env()
         for p in env.action_queue:
             if p.team != env.current_piece.team:
                 p.position = Point(18, 18)
-        logits = np.zeros(6, dtype=np.float64)
+        # aggression=0 (logit=-3 at index 2 suppresses advance-and-attack)
+        logits = np.array([0.0, 0.0, -3.0, 0.0, 0.0, 0.0], dtype=np.float64)
         action = decode_action(logits, env)
         self.assertFalse(action.attack)
 
-    def test_decode_targets_highest_priority(self):
-        """The enemy with highest target_logit should be attacked."""
+    def test_decode_targets_lowest_hp(self):
+        """With target_bias < 0 (params < 0.33), should target lowest-health."""
         env = _make_minimal_env()
-        # Add a second enemy
-        from env import Piece
-        from utils import Point
-        p3 = Piece()
-        a = p3.get_accessor()
-        a.set_team_to(2)
-        a.set_strength_to(29)
-        a.set_position(Point(7, 5))
-        p3.id = 2
-        p3.weapon_type = 3
-        a.set_type_to(3)
-        a.set_physical_damage_to(16); a.set_range_to(9)
-        a.set_physical_resist_to(23); a.set_max_movement_by(-3)
-        a.set_max_health_to(108); a.set_health_to(50)  # low HP
-        a.set_max_action_points(); a.set_action_points_to(3)
-        a.set_max_movement_to(1 + 14.5 + 10 - 3)
-        a.set_movement_to(a.piece.max_movement)
-        # Don't add to action_queue (it's a 2-piece env)
-        # Just test that decoder picks the right target
-        # We'll just test with the existing 2-piece env instead
-
-        logits = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float64)
+        logits = np.array([-1.5, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float64)
         action = decode_action(logits, env)
-        # With only 1 enemy, the target must be enemy 0 (id=1)
         self.assertTrue(action.attack)
         self.assertEqual(action.attack_context.target.id, 1)
 
     def test_decode_with_retreat(self):
-        """retreat_bias > 0.5 and low HP → retreat."""
+        """High retreat_hp and low HP → retreat."""
         env = _make_minimal_env()
-        env.current_piece.health = 10  # Below 30% of 108
-        logits = np.array([0.0, 0.0, 0.0, 0.0, 0.8, 0.0], dtype=np.float64)
+        env.current_piece.health = 10
+        # retreat_hp at index 3 > 0.4 → params[3] = 1.0/4+0.5 = 0.75 > 0.4 ✓
+        logits = np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0], dtype=np.float64)
         action = decode_action(logits, env)
         self.assertTrue(action.move)
 
