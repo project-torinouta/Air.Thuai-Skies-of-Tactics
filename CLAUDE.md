@@ -106,6 +106,23 @@ See `.claude/skills/release/SKILL.md`.
   `Tuple[X, Y]`, `Dict[K, V]`) — not built-in generics or `| None` union syntax.
 - **Formatter**: Ruff configured in `pyproject.toml` (line-length 100,
   double quotes, space indent).
+- **Multi-line call style**: Each argument on its own line, 4-space indent,
+  closing paren on its own line. Do NOT align arguments with the opening
+  paren on the next line. Preferred:
+
+  .. code-block:: python
+
+      some_function(
+          arg1, arg2,
+          kwarg=value,
+      )
+
+  Not:
+
+  .. code-block:: python
+
+      some_function(arg1, arg2,
+                    kwarg=value)
 - **Strategies**: Each strategy variant lives in its own file under
   `src/strategies/`. Import factory functions directly:
   `from strategies.sniper import get_sniper_action_strategy`.
