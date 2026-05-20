@@ -368,15 +368,19 @@ def _print_copy_block(
         fb = ind["first_blood_round"]
         camp = ind.get("player_camp", "?")
         ai = ind.get("opponent_ai", "")
-        lines.append(
-            f"{label:<30} {ai:<20} {camp:>4} {result:>1}"
-            f" {ind['total_rounds']:>3d}"
-            f" {fb if fb > 0 else '-':>3}"
-            f" {ind['player_compactness'][0]:>5.1f} → {ind['player_compactness'][-1]:>5.1f}"
-            f" {ind['player_ffi'][0]:>4.0%} → {ind['player_ffi'][-1]:>4.0%}"
-            f" {ind['player_kei']['ratio']:>4.0%}"
-            f" {ind['player_avg_damage']:>5.1f}"
-        )
+
+        if len(ind["player_compactness"]) == 0 or len(ind["player_ffi"]) == 0:
+            continue
+        else:
+            lines.append(
+                f"{label:<30} {ai:<20} {camp:>4} {result:>1}"
+                f" {ind['total_rounds']:>3d}"
+                f" {fb if fb > 0 else '-':>3}"
+                f" {ind['player_compactness'][0]:>5.1f} → {ind['player_compactness'][-1]:>5.1f}"
+                f" {ind['player_ffi'][0]:>4.0%} → {ind['player_ffi'][-1]:>4.0%}"
+                f" {ind['player_kei']['ratio']:>4.0%}"
+                f" {ind['player_avg_damage']:>5.1f}"
+            )
 
     print()
     print("\n".join(lines))
@@ -401,14 +405,18 @@ def _print_indicator_table(
         result = "W" if ind["player_won"] else "L"
         fb = ind["first_blood_round"]
         camp = ind["player_camp"]
-        print(
-            f"{label:<28} {camp:>5} {result:>4} {ind['total_rounds']:>4d}"
-            f" {fb if fb > 0 else '-':>4}"
-            f" {ind['player_compactness'][0]:>5.1f} → {ind['player_compactness'][-1]:>5.1f}"
-            f" {ind['player_ffi'][0]:>4.0%} → {ind['player_ffi'][-1]:>4.0%}"
-            f" {ind['player_kei']['ratio']:>4.0%}"
-            f" {ind['player_avg_damage']:>5.1f}"
-        )
+
+        if len(ind["player_compactness"]) == 0 or len(ind["player_ffi"]) == 0:
+            continue
+        else:
+            print(
+                f"{label:<28} {camp:>5} {result:>4} {ind['total_rounds']:>4d}"
+                f" {fb if fb > 0 else '-':>4}"
+                f" {ind['player_compactness'][0]:>5.1f} → {ind['player_compactness'][-1]:>5.1f}"
+                f" {ind['player_ffi'][0]:>4.0%} → {ind['player_ffi'][-1]:>4.0%}"
+                f" {ind['player_kei']['ratio']:>4.0%}"
+                f" {ind['player_avg_damage']:>5.1f}"
+            )
     print()
 
 
