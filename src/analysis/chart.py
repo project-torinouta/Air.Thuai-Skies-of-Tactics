@@ -1,3 +1,22 @@
+# Copyright 2026 AshGrey <ashgrey.huaier@gmail.com>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in the
+# Software without restriction, including without limitation the rights to use, copy,
+# modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+# and to permit persons to whom the Software is furnished to do so, subject to the
+# following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 """Paper-style strategy fingerprint chart — four core tactical indicators."""
 
 from typing import List, Optional, Tuple
@@ -35,7 +54,7 @@ def _try_init() -> bool:
         return False
 
 
-# ── Fingerprint (6-panel aggregate) ────────────────────────────────────────
+# Fingerprint (6-panel aggregate)
 
 
 def plot_strategy_fingerprint(
@@ -46,7 +65,7 @@ def plot_strategy_fingerprint(
         return
     import matplotlib.pyplot as plt  # noqa: PLC0415
 
-    # ── Layout: 2 rows, row 0 has 4 cols, row 1 has 2 cols ──
+    # Layout: 2 rows, row 0 has 4 cols, row 1 has 2 cols
     fig = plt.figure(figsize=(12, 6.5))
     gs = fig.add_gridspec(
         2, 4, hspace=0.45, wspace=0.35,
@@ -61,9 +80,9 @@ def plot_strategy_fingerprint(
     fb_wr = agg.get("first_blood_win_rate", 0)
     spells = agg.get("avg_spell_count", 0)
 
-    # ── Row 0: A | B | C | D ──
+    # Row 0: A | B | C | D
 
-    # -- A: Build ----------------------------------------------------------
+    # A: Build
     ax1 = fig.add_subplot(gs[0, 0])
     str_v = (build.get("str") or [29])[0]
     dex_v = (build.get("dex") or [1])[0]
@@ -84,17 +103,27 @@ def plot_strategy_fingerprint(
             str(v), ha="center", fontsize=8.5, fontweight="bold",
         )
 
-    # -- B: Focus Fire Index (FFI) -----------------------------------------
+    # B: Focus Fire Index (FFI)
     ax2 = fig.add_subplot(gs[0, 1])
     ffi = agg.get("ffi", 0)
-    ax2.barh([0], [ffi * 100], height=0.35, color=_C["ffi"],
-             edgecolor="white", linewidth=0.5)
+    ax2.barh(
+        [0],
+        [ffi * 100],
+        height=0.35,
+        color=_C["ffi"],
+        edgecolor="white",
+        linewidth=0.5
+    )
     ax2.set_xlim(0, 100)
     ax2.set_yticks([])
     ax2.set_title("B  Focus Fire Index", loc="left", fontweight="bold", fontsize=9)
     ax2.set_xlabel("% attacks on same target (3-rnd window)")
-    ax2.text(ffi * 100 + 1.5, 0, f"{ffi:.0%}",
-             va="center", fontsize=8.5, fontweight="bold")
+    ax2.text(
+        ffi * 100 + 1.5, 0, f"{ffi:.0%}",
+        va="center",
+        fontsize=8.5,
+        fontweight="bold"
+    )
 
     if ffi >= 0.6:
         note = "High coordination — strong focus fire"
@@ -104,33 +133,64 @@ def plot_strategy_fingerprint(
         note = "Low coordination — attacks spread"
     ax2.text(50, -0.65, note, ha="center", fontsize=6.5, color=_C["text_light"])
 
-    # -- C: Kiting Efficiency (KEI) ----------------------------------------
+    # C: Kiting Efficiency (KEI)
     ax3 = fig.add_subplot(gs[0, 2])
     kei = agg.get("kei_ratio", 0)
     kei_att = agg.get("kei_total_attempts", 0)
 
     kite_pct = kei * 100
     no_kite_pct = (1 - kei) * 100
-    ax3.barh([0], [kite_pct], height=0.35, left=0,
-             color=_C["kei_kite"], edgecolor="white", linewidth=0.5)
-    ax3.barh([0], [no_kite_pct], height=0.35, left=kite_pct,
-             color=_C["kei_no"], edgecolor="white", linewidth=0.5)
+    ax3.barh(
+        [0],
+        [kite_pct],
+        height=0.35,
+        left=0,
+        color=_C["kei_kite"],
+        edgecolor="white",
+        linewidth=0.5
+    )
+    ax3.barh(
+        [0],
+        [no_kite_pct],
+        height=0.35,
+        left=kite_pct,
+        color=_C["kei_no"],
+        edgecolor="white",
+        linewidth=0.5
+    )
     ax3.set_xlim(0, 100)
     ax3.set_yticks([])
     ax3.set_title("C  Kiting Efficiency", loc="left", fontweight="bold", fontsize=9)
     ax3.set_xlabel("% of move+attack actions")
-    ax3.text(50, -0.65, f"{kei_att} move+attack actions detected",
-             ha="center", fontsize=6.5, color=_C["text_light"])
+    ax3.text(
+        50, -0.65, f"{kei_att} move+attack actions detected",
+        ha="center",
+        fontsize=6.5,
+        color=_C["text_light"]
+    )
 
-    # -- D: Compactness ----------------------------------------------
+    # D: Compactness
     ax4 = fig.add_subplot(gs[0, 3])
     comp = agg.get("compactness", 0)
     opp_comp = agg.get("opponent_compactness", 0)
 
-    ax4.barh([0.4], [comp], height=0.3, color=_C["compactness"],
-             edgecolor="white", linewidth=0.5)
-    ax4.barh([0.0], [opp_comp], height=0.3, color=_C["text_light"],
-             edgecolor="white", linewidth=0.5, alpha=0.6)
+    ax4.barh(
+        [0.4],
+        [comp],
+        height=0.3,
+        color=_C["compactness"],
+        edgecolor="white",
+        linewidth=0.5
+    )
+    ax4.barh(
+        [0.0],
+        [opp_comp],
+        height=0.3,
+        color=_C["text_light"],
+        edgecolor="white",
+        linewidth=0.5,
+        alpha=0.6
+    )
     ax4.set_yticks([0.4, 0.0])
     ax4.set_yticklabels(["Player", "Opponent"], fontsize=6.5)
     ax4.set_title("D  Compactness", loc="left", fontweight="bold", fontsize=9)
@@ -147,13 +207,17 @@ def plot_strategy_fingerprint(
         label = "medium spread"
     else:
         label = "loose / lane split"
-    ax4.text(xmax / 2, -0.65, f"Formation: {label}",
-             ha="center", fontsize=6.5, color=_C["text_light"])
+    ax4.text(
+        xmax / 2, -0.65, f"Formation: {label}",
+        ha="center",
+        fontsize=6.5,
+        color=_C["text_light"]
+    )
 
-    # ── Row 1: [  E: combat + HAI  ] [  F: legend + summary  ] ──
+    # Row 1: [  E: combat + HAI  ] [  F: legend + summary  ]
     gs_bottom = gs[1, :].subgridspec(1, 2, wspace=0.30, width_ratios=[1.2, 1])
 
-    # -- E: Combat Stats + HAI ---------------------------------------------
+    # E: Combat Stats + HAI
     ax5 = fig.add_subplot(gs_bottom[0])
     ax5.set_title("E  Combat & High Ground", loc="left", fontweight="bold", fontsize=9)
     ax5.set_xlim(0, 1)
@@ -163,32 +227,66 @@ def plot_strategy_fingerprint(
     # Damage gauge
     ax5.text(0.00, 0.85, "Damage / attack", fontsize=7.5, color=_C["text"])
     dmg_norm = min(dmg / 50, 1)
-    ax5.barh(0.72, dmg_norm, height=0.12, color=_C["str"],
-             edgecolor="white", linewidth=0.5)
-    ax5.plot([0, 1], [0.78, 0.78], color="#e0e0e0", linewidth=0.5,
-             transform=ax5.transData, zorder=0)
-    ax5.text(dmg_norm + 0.01, 0.72, f"{dmg:.1f}",
-             va="center", fontsize=8, fontweight="bold")
+    ax5.barh(
+        0.72,
+        dmg_norm,
+        height=0.12,
+        color=_C["str"],
+        edgecolor="white",
+        linewidth=0.5
+    )
+    ax5.plot(
+        [0, 1],
+        [0.78, 0.78],
+        color="#e0e0e0",
+        linewidth=0.5,
+        transform=ax5.transData, zorder=0
+    )
+    ax5.text(
+        dmg_norm + 0.01, 0.72, f"{dmg:.1f}",
+        va="center",
+        fontsize=8,
+        fontweight="bold"
+    )
 
     # Spells gauge
     ax5.text(0.00, 0.55, "Spells / match", fontsize=7.5, color=_C["text"])
     spell_norm = min(spells / 5, 1)
-    ax5.barh(0.42, spell_norm, height=0.12, color=_C["int"],
-             edgecolor="white", linewidth=0.5)
-    ax5.plot([0, 1], [0.48, 0.48], color="#e0e0e0", linewidth=0.5,
-             transform=ax5.transData, zorder=0)
-    ax5.text(spell_norm + 0.01, 0.42, f"{spells:.1f}",
-             va="center", fontsize=8, fontweight="bold")
+    ax5.barh(
+        0.42, spell_norm, height=0.12, color=_C["int"],
+        edgecolor="white",
+        linewidth=0.5
+    )
+    ax5.plot(
+        [0, 1],
+        [0.48, 0.48],
+        color="#e0e0e0",
+        linewidth=0.5,
+        transform=ax5.transData,
+        zorder=0
+    )
+    ax5.text(
+        spell_norm + 0.01, 0.42, f"{spells:.1f}",
+        va="center",
+        fontsize=8,
+        fontweight="bold"
+    )
 
     # First blood annotation at bottom
     fb_text = f"R{fb_r:.0f}" if fb_r > 0 else "N/A"
     ax5.text(0.00, -0.10, "First blood", fontsize=7.5, color=_C["text"])
-    ax5.text(0.00, -0.20, fb_text, fontsize=13, fontweight="bold",
-             color=_C["int"])
-    ax5.text(0.12, -0.17, f"(win {fb_wr:.0%})", fontsize=7,
-             color=_C["text_light"], va="bottom")
+    ax5.text(
+        0.00, -0.20, fb_text, fontsize=13,
+        fontweight="bold",
+        color=_C["int"]
+    )
+    ax5.text(
+        0.12, -0.17, f"(win {fb_wr:.0%})", fontsize=7,
+        color=_C["text_light"],
+        va="bottom"
+    )
 
-    # -- F: Legend + Text Summary ------------------------------------------
+    # F: Legend + Text Summary
     ax6 = fig.add_subplot(gs_bottom[1])
     ax6.set_xlim(0, 1)
     ax6.set_ylim(0, 1)
@@ -206,8 +304,11 @@ def plot_strategy_fingerprint(
         ax6.text(col_x[i], 0.80, title, fontsize=6.5, color=_C["text_light"])
         ax6.text(col_x[i], 0.64, val, fontsize=10, fontweight="bold")
 
-    ax6.plot([0.02, 0.98], [0.50, 0.50], color="#e0e0e0", linewidth=0.5,
-             transform=ax6.transAxes)
+    ax6.plot(
+        [0.02, 0.98], [0.50, 0.50], color="#e0e0e0",
+        linewidth=0.5,
+        transform=ax6.transAxes
+    )
 
     legend_lines = (
         "Four tactical indicators:\n"
@@ -216,8 +317,11 @@ def plot_strategy_fingerprint(
         "  HAI         — high-ground utilization\n"
         "  KEI         — hit-and-run (kiting) rate"
     )
-    ax6.text(0.02, 0.42, legend_lines, fontsize=6.5, color=_C["text"],
-             va="top", linespacing=1.6)
+    ax6.text(
+        0.02, 0.42, legend_lines, fontsize=6.5,
+        color=_C["text"],
+        va="top", linespacing=1.6
+    )
 
     thresholds = (
         f"Thresholds:\n"
@@ -225,8 +329,14 @@ def plot_strategy_fingerprint(
         f"  FFI ≥0.6 high coordination\n"
         f"  KEI ≥0.3 active kiting"
     )
-    ax6.text(0.02, 0.10, thresholds, fontsize=6, color=_C["text_light"],
-             va="top", linespacing=1.4)
+    ax6.text(
+        0.02, 0.10,
+        thresholds,
+        fontsize=6,
+        color=_C["text_light"],
+        va="top",
+        linespacing=1.4
+    )
 
     fig.suptitle(
         f"Strategy Fingerprint  ({nm} matches, {agg['n_wins']}W / {nm - agg['n_wins']}L)",
