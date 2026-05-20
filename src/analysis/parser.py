@@ -112,7 +112,7 @@ def parse_replay(
         # Parse round-end snapshot states
 
         positions: Dict[int, Tuple[int, int]] = {}
-        elevations: Dict[int, int] = {}
+        camps: Dict[int, str] = {}
         hp: Dict[int, int] = {}
 
         for stat in rnd.get("stats", []):
@@ -123,13 +123,17 @@ def parse_replay(
 
             pos = stat.get("position", {})
             positions[sid] = (pos.get("x", 0), pos.get("z", 0))
-            elevations[sid] = pos.get("y", 0)
             hp[sid] = stats_piece.get("health", 0)
+
+            # We need to iterate the initial soldiers from its id to get its camp
+            for s in soldiers:
+                if s.id == sid:
+                    camps[sid] = s.camp
 
         round_snapshots.append(RoundSnapshot(
             round_number=rn,
             positions=positions,
-            elevations=elevations,
+            camps=camps,
             hp=hp,
             is_end=rnd.get("end") == "true",
         ))

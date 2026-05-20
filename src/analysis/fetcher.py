@@ -87,7 +87,7 @@ def _extract_player_ai(player: Dict) -> Tuple[str, int]:
 
     :param player: They player's info
     :type player: Dict
-    :returns: `(entity_name, version)` from the `code` block.
+    :returns: ``(entity_name, version)`` from the ``code`` block.
     :rtype: Tuple[str, int]
     """
     code = player.get("code", {})
@@ -104,7 +104,7 @@ def _extract_user_info(user: str, players: List[Dict]) -> Tuple[str, str]:
     :type user: str
     :param players: The list of player
     :type players: List[Dict]
-    :returns: `(user, user_camp)` from the `info` block.
+    :returns: ``(user, user_camp)`` from the ``info`` block.
     :rtype: Tuple[str, str]
     """
     for idx, player in enumerate(players):
@@ -132,7 +132,7 @@ def download_replay(
     :type output_dir: str
     :param player_name: Analyzed player's username.
     :type player_name: str
-    :returns: ``(my_entity, my_version, opponent_name, opp_entity, opp_version, match_id)``
+    :returns: ``(my_entity, my_version, my_camp, opponent_name, opp_entity, opp_version, match_id)`` \
         or None if skipped.
     :rtype: Optional[Tuple[str, str, int, str, int, int]]
     """
@@ -145,14 +145,19 @@ def download_replay(
 
     my_entity = ""
     my_version = 0
+    my_camp = ""
     opponent = ""
     opp_entity = ""
     opp_version = 0
 
-    for player in players:
+    for idx, player in enumerate(players):
         uname = player.get("user", {}).get("username", "")
         if uname == player_name:
             my_entity, my_version = _extract_player_ai(player)
+            if idx == 0:
+                my_camp = "Red"
+            else:
+                my_camp = "Blue"
         else:
             if opponent:
                 opponent += "-" + uname
@@ -179,34 +184,8 @@ def download_replay(
         with open(fpath, "w") as f:
             json.dump(resp.json(), f, indent=2)
 
-        return my_entity, my_version, opponent, opp_entity, opp_version, match_id
+        return my_entity, my_version, my_camp, opponent, opp_entity, opp_version, match_id
     except requests.HTTPError as e:
         print(f"Something error happened when requesting for {download_url}")
-        return "", 0, "", "", 0, 0
+        return "", 0, "", "", "", 0, 0
 
-
-def load_local_replays(replay_dir: str) -> List[Tuple[str, int, dict]]:
-    """Load all replay JSONs from a local directory.
-
-    Files are expected to be named ``{opponent}-{match_id}.json``.
-
-    :param replay_dir: Directory containing replay files.
-    :type replay_dir: str
-    :returns: List of ``(opponent, match_id, data)`` tuples.
-    :rtype: List[Tuple[str, int, dict]]
-    """
-    results: List[Tuple[str, int, dict]] = []
-    pattern = re.compile(r"^(.+)-(\d+)\.json$")
-
-    for fname in sorted(os.listdir(replay_dir)):
-        match = pattern.match(fname)
-        if not match:
-            continue
-        opponent = match.group(1)
-        match_id = int(match.group(2))
-        fpath = os.path.join(replay_dir, fname)
-        with open(fpath) as f:
-            data = json.load(f)
-        results.append((opponent, match_id, data))
-
-    return results
