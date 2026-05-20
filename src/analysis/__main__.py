@@ -75,7 +75,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=str,
-        default="analysis_out",
+        default="analysis",
         help="Output directory for charts",
     )
     parser.add_argument(
