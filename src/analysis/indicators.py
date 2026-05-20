@@ -29,7 +29,7 @@ Four core metrics replace the previous indicator system:
 from collections import Counter
 from typing import Dict, List, Tuple
 
-from analysis.models import ParsedReplay, Indicators
+from analysis.models import ParsedReplay
 
 
 def compute_indicators(replay: ParsedReplay) -> dict:
@@ -332,11 +332,11 @@ def _kiting_per_round(replay: ParsedReplay, camp: str) -> List[float]:
     return sequence
 
 
-def aggregate_indicators(all_indicators: List[Indicators]) -> dict:
+def aggregate_indicators(all_indicators: List[dict]) -> dict:
     """Aggregate indicators across matches.
 
     :param all_indicators: All indicator that we're interested
-    :type all_indicators: List[Indicators]
+    :type all_indicators: List[dict]
     """
 
     n = len(all_indicators)

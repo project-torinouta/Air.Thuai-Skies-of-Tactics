@@ -150,23 +150,3 @@ class ParsedReplay:
     actions: List[RoundAction] = field(default_factory=list)
     winner: str = "Draw"
 
-@dataclass
-class Indicators:
-    """Indicators or indices for replay data
-
-    :param player_build: Initial property of player's soldiers
-    :type player_build: Dict[str, Union[int, str]]
-    :param opponent_build: Initial property of player's soldiers
-    :type opponent_build: Dict[str, Union[int, str]]
-    """
-
-    player_name: str
-    player_ai: str
-    player_camp: str
-    opponent_name: str
-    opponent_ai: str
-    opponent_camp: str
-    player_compactness: List[float]
-    opponent_compactness: List[float]
-    player_build: Dict[str, Union[int, str]] = field(default_factory=dict)
-    opponent_build: Dict[str, Union[int, str]] = field(default_factory=dict)
