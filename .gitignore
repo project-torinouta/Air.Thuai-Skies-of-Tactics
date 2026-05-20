@@ -31,3 +31,6 @@
 **/target
 
 **/.benchmark_cache.json
+
+# Analysis
+/analysis/
