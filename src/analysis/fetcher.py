@@ -176,7 +176,7 @@ def download_replay(
         "Accept": "application/json, text/plain, */*",
     }
     try:
-        resp = requests.get(download_url, headers=headers, timeout=30)
+        resp = requests.get(download_url, headers=headers, timeout=3000)
         resp.raise_for_status()
 
         os.makedirs(output_dir, exist_ok=True)
