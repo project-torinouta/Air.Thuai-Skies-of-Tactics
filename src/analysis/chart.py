@@ -348,7 +348,7 @@ def plot_strategy_fingerprint(
     print(f"Strategy fingerprint saved to {output}")
 
 
-# ── Average timeline charts (4 independent PNGs, mean ± std) ─────────────
+# Average timeline charts (4 independent PNGs, mean ± std)
 
 
 def plot_average_timelines(
@@ -356,7 +356,7 @@ def plot_average_timelines(
     camp_labels: Optional[dict] = None,
     player_camp: Optional[str] = None,
 ) -> None:
-    """Generate four average ± std timeline PNGs (player's camp only).
+    """Generate three average ± std timeline PNGs (player's camp only).
 
     Files produced::
 
