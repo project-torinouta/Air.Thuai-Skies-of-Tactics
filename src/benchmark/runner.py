@@ -4,7 +4,7 @@ import contextlib
 import os
 import random
 import sys
-from typing import List, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from env import Environment
 
@@ -18,6 +18,7 @@ def run_single_game(
     p2_strategy: StrategyPair,
     max_rounds: int = 100,
     verbose: bool = False,
+    round_callback: "Optional[Callable[[Environment, int], None]]" = None,
 ) -> GameResult:
     """Run a single game between two strategy pairs and return the result.
 
@@ -31,6 +32,9 @@ def run_single_game(
     :type max_rounds: int
     :param verbose: Whether to show game output.
     :type verbose: bool
+    :param round_callback: Optional callback ``(env, round_number)`` called
+        after each round.  Used by the heuristic loop to capture snapshots.
+    :type round_callback: Optional[Callable]
     :returns: A GameResult with result, rounds, first_blood, survivors.
     :rtype: GameResult
     """
@@ -44,12 +48,22 @@ def run_single_game(
     env.input_manager.set_function_input_method(2, p2_init, p2_action)
 
     try:
-        if verbose:
-            env.run(board_file)
+        if not verbose:
+            with open(os.devnull, "w") as _hl_sink:
+                with contextlib.redirect_stdout(_hl_sink):
+                    env.initialize(board_file)
+                    while not env.is_game_over:
+                        env.step()
+                        if round_callback is not None:
+                            round_callback(env, env.round_number)
         else:
-            with open(os.devnull, "w") as devnull:
-                with contextlib.redirect_stdout(devnull):
-                    env.run(board_file)
+            env.initialize(board_file)
+            env.visualize_board()
+            while not env.is_game_over:
+                env.step()
+                env.visualize_board()
+                if round_callback is not None:
+                    round_callback(env, env.round_number)
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception:
