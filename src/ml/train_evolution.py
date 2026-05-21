@@ -63,9 +63,9 @@ def _eval_one(params: np.ndarray, board: str, p2_name: str, seed: int) -> float:
 
     with open(os.devnull, "w") as devnull:
         with contextlib.redirect_stdout(devnull):
-            result = run_single_game(board, (p1_init, p1_action), (p2_init, p2_action),
-                                     env.max_rounds, verbose=False)
-    return 1.0 if result == 1 else 0.0
+            gr = run_single_game(board, (p1_init, p1_action), (p2_init, p2_action),
+                                  env.max_rounds, verbose=False)
+    return 1.0 if gr.result == 1 else 0.0
 
 
 def evaluate_candidate(
