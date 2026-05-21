@@ -187,6 +187,14 @@ def parse_args() -> argparse.Namespace:
         help="Skip these strategies in round-robin (e.g. --exclude mcts alpha_beta)",
     )
     parser.add_argument(
+        "--include",
+        type=str,
+        nargs="*",
+        default=None,
+        help="Only these strategies in round-robin (overrides --exclude,"
+             " e.g. --include sniper sniper_tactical zoner)",
+    )
+    parser.add_argument(
         "--hist",
         type=str,
         default=None,
@@ -269,9 +277,17 @@ def main() -> None:
         plot_win_rate_curve(cached, args.chart_only, "cached")
         return
 
-    # Filter strategies when --exclude is given
+    # Filter strategies: --include takes precedence over --exclude
     active_names = STRATEGY_NAMES
-    if args.exclude:
+    if args.include:
+        active_names = list(dict.fromkeys(args.include))
+        for name in active_names:
+            if name not in STRATEGY_NAMES:
+                print(f"Warning: unknown strategy '{name}', ignoring.")
+        active_names = [n for n in active_names if n in STRATEGY_NAMES]
+        print(f"Included strategies ({len(active_names)}): {', '.join(active_names)}")
+        print()
+    elif args.exclude:
         excluded = set(args.exclude)
         active_names = [n for n in STRATEGY_NAMES if n not in excluded]
         print(f"Excluded strategies: {', '.join(sorted(excluded))}")
