@@ -42,6 +42,10 @@ from strategies.sniper_variants import (
     get_zoner_action_strategy,
     get_sniper_init_strategy as get_sniper_variant_init_strategy,
 )
+from strategies.dynamic import (
+    get_dynamic_action_strategy,
+    get_dynamic_init_strategy,
+)
 from strategies.ml_sniper import (
     get_ml_sniper_action_strategy,
     get_ml_sniper_init_strategy,
@@ -75,6 +79,7 @@ STRATEGY_NAMES: List[str] = [
     "deathball",
     "high_ground",
     "zoner",
+    "dynamic",
 ]
 
 SNIPER_STRATEGY_NAMES: List[str] = [
@@ -100,6 +105,7 @@ INIT_NAMES: List[str] = [
     "deathball",
     "high_ground",
     "zoner",
+    "dynamic",
 ]
 
 ACTION_NAMES: List[str] = [
@@ -120,6 +126,7 @@ ACTION_NAMES: List[str] = [
     "deathball",
     "high_ground",
     "zoner",
+    "dynamic",
 ]
 
 
@@ -156,6 +163,8 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_random_init_strategy()
     if name in ("deathball", "high_ground", "zoner"):
         return get_sniper_variant_init_strategy()
+    if name == "dynamic":
+        return get_dynamic_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
 
 
@@ -211,6 +220,8 @@ def get_action_strategy(
         return get_high_ground_action_strategy()
     if name == "zoner":
         return get_zoner_action_strategy()
+    if name == "dynamic":
+        return get_dynamic_action_strategy()
     raise ValueError(f"Unknown action strategy: {name}")
 
 
