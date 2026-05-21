@@ -32,13 +32,17 @@ from strategies.sniper import (
     get_sniper_action_strategy,
     get_sniper_init_strategy,
 )
-from strategies.sniper_survivor import (
-    get_sniper_survivor_action_strategy,
-    get_sniper_survivor_init_strategy,
+from strategies.sniper_tactical import (
+    get_sniper_tactical_action_strategy,
+    get_sniper_tactical_init_strategy,
 )
 from strategies.ml_sniper import (
     get_ml_sniper_action_strategy,
     get_ml_sniper_init_strategy,
+)
+from strategies.ppo_sniper import (
+    get_ppo_sniper_action_strategy,
+    get_ppo_sniper_init_strategy,
 )
 from strategies.warrior import (
     get_warrior_action_strategy,
@@ -62,10 +66,11 @@ STRATEGY_NAMES: List[str] = [
     "ranger",
     "random",
     "sniper",
-    "sniper_survivor",
+    "sniper_tactical",
     "sniper_v102",
     "sniper_v103",
     "ml_sniper",
+    "ppo_sniper",
 ]
 
 INIT_NAMES: List[str] = [
@@ -76,10 +81,11 @@ INIT_NAMES: List[str] = [
     "ranger",
     "random",
     "sniper",
-    "sniper_survivor",
+    "sniper_tactical",
     "sniper_v102",
     "sniper_v103",
     "ml_sniper",
+    "ppo_sniper",
 ]
 
 ACTION_NAMES: List[str] = [
@@ -93,10 +99,11 @@ ACTION_NAMES: List[str] = [
     "ranger",
     "random",
     "sniper",
-    "sniper_survivor",
+    "sniper_tactical",
     "sniper_v102",
     "sniper_v103",
     "ml_sniper",
+    "ppo_sniper",
 ]
 
 
@@ -121,14 +128,16 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_ranger_init_strategy()
     if name == "sniper":
         return get_sniper_init_strategy()
-    if name == "sniper_survivor":
-        return get_sniper_survivor_init_strategy()
+    if name == "sniper_tactical":
+        return get_sniper_tactical_init_strategy()
     if name == "sniper_v102":
         return get_sniper_init_strategy_v102()
     if name == "sniper_v103":
         return get_sniper_init_strategy_v103()
     if name == "ml_sniper":
         return get_ml_sniper_init_strategy()
+    if name == "ppo_sniper":
+        return get_ppo_sniper_init_strategy()
     if name == "random":
         return get_random_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
@@ -170,14 +179,16 @@ def get_action_strategy(
         return get_ranger_action_strategy()
     if name == "sniper":
         return get_sniper_action_strategy()
-    if name == "sniper_survivor":
-        return get_sniper_survivor_action_strategy()
+    if name == "sniper_tactical":
+        return get_sniper_tactical_action_strategy()
     if name == "sniper_v102":
         return get_sniper_action_strategy_v102()
     if name == "sniper_v103":
         return get_sniper_action_strategy_v103()
     if name == "ml_sniper":
         return get_ml_sniper_action_strategy()
+    if name == "ppo_sniper":
+        return get_ppo_sniper_action_strategy()
     if name == "random":
         return get_random_action_strategy()
     raise ValueError(f"Unknown action strategy: {name}")
