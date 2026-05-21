@@ -36,6 +36,12 @@ from strategies.sniper_tactical import (
     get_sniper_tactical_action_strategy,
     get_sniper_tactical_init_strategy,
 )
+from strategies.sniper_variants import (
+    get_deathball_action_strategy,
+    get_high_ground_action_strategy,
+    get_zoner_action_strategy,
+    get_sniper_init_strategy as get_sniper_variant_init_strategy,
+)
 from strategies.ml_sniper import (
     get_ml_sniper_action_strategy,
     get_ml_sniper_init_strategy,
@@ -66,6 +72,17 @@ STRATEGY_NAMES: List[str] = [
     "sniper_v102",
     "sniper_v103",
     "ml_sniper",
+    "deathball",
+    "high_ground",
+    "zoner",
+]
+
+SNIPER_STRATEGY_NAMES: List[str] = [
+    "sniper",
+    "sniper_tactical",
+    "sniper_v102",
+    "sniper_v103",
+    "ml_sniper",
 ]
 
 INIT_NAMES: List[str] = [
@@ -80,6 +97,9 @@ INIT_NAMES: List[str] = [
     "sniper_v102",
     "sniper_v103",
     "ml_sniper",
+    "deathball",
+    "high_ground",
+    "zoner",
 ]
 
 ACTION_NAMES: List[str] = [
@@ -97,6 +117,9 @@ ACTION_NAMES: List[str] = [
     "sniper_v102",
     "sniper_v103",
     "ml_sniper",
+    "deathball",
+    "high_ground",
+    "zoner",
 ]
 
 
@@ -131,6 +154,8 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_ml_sniper_init_strategy()
     if name == "random":
         return get_random_init_strategy()
+    if name in ("deathball", "high_ground", "zoner"):
+        return get_sniper_variant_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
 
 
@@ -180,6 +205,12 @@ def get_action_strategy(
         return get_ml_sniper_action_strategy()
     if name == "random":
         return get_random_action_strategy()
+    if name == "deathball":
+        return get_deathball_action_strategy()
+    if name == "high_ground":
+        return get_high_ground_action_strategy()
+    if name == "zoner":
+        return get_zoner_action_strategy()
     raise ValueError(f"Unknown action strategy: {name}")
 
 

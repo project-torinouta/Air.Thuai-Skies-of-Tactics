@@ -5,7 +5,7 @@ import itertools
 import os
 import random
 import sys
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from benchmark import (
     ACTION_NAMES,
@@ -29,6 +29,8 @@ from benchmark.chart import (
 )
 from benchmark.report import print_results_table, print_win_rate_summary
 from benchmark.runner import run_matchup_series
+from env import InitGameMessage
+from utils import PieceArg, Point
 from benchmark.sweep import run_sweep
 
 
@@ -185,6 +187,14 @@ def parse_args() -> argparse.Namespace:
         help="Skip these strategies in round-robin (e.g. --exclude mcts alpha_beta)",
     )
     parser.add_argument(
+        "--include",
+        type=str,
+        nargs="*",
+        default=None,
+        help="Only these strategies in round-robin (overrides --exclude,"
+             " e.g. --include sniper sniper_tactical zoner)",
+    )
+    parser.add_argument(
         "--hist",
         type=str,
         default=None,
@@ -231,6 +241,23 @@ def parse_args() -> argparse.Namespace:
         default=8,
         help="Games per (STR, INT) cell in sweep (default: 8)",
     )
+    parser.add_argument(
+        "--sweep-type",
+        type=str,
+        default="str-int",
+        choices=["str-int", "str-dex"],
+        help="Sweep axis: 'str-int' (INT on x, DEX implied) or"
+             " 'str-dex' (DEX on x, INT implied) (default: str-int)",
+    )
+    parser.add_argument(
+        "--fixed-build",
+        nargs=3,
+        type=int,
+        metavar=("STR", "DEX", "INT"),
+        default=None,
+        help="Force all strategies to use the given stat allocation and"
+             " bow + heavy armour.  Example: --fixed-build 29 1 0",
+    )
     return parser.parse_args()
 
 
@@ -250,9 +277,17 @@ def main() -> None:
         plot_win_rate_curve(cached, args.chart_only, "cached")
         return
 
-    # Filter strategies when --exclude is given
+    # Filter strategies: --include takes precedence over --exclude
     active_names = STRATEGY_NAMES
-    if args.exclude:
+    if args.include:
+        active_names = list(dict.fromkeys(args.include))
+        for name in active_names:
+            if name not in STRATEGY_NAMES:
+                print(f"Warning: unknown strategy '{name}', ignoring.")
+        active_names = [n for n in active_names if n in STRATEGY_NAMES]
+        print(f"Included strategies ({len(active_names)}): {', '.join(active_names)}")
+        print()
+    elif args.exclude:
         excluded = set(args.exclude)
         active_names = [n for n in STRATEGY_NAMES if n not in excluded]
         print(f"Excluded strategies: {', '.join(sorted(excluded))}")
@@ -268,6 +303,7 @@ def main() -> None:
             games_per_cell=args.sweep_games,
             max_rounds=args.max_game_rounds,
             board_files=resolve_boards(args),
+            sweep_type=args.sweep_type,
         )
         return
 
@@ -284,6 +320,23 @@ def main() -> None:
         )
         for name in active_names
     }
+
+    if args.fixed_build is not None:
+        strength, dexterity, intelligence = args.fixed_build
+        print(
+            f"Fixed build: STR {strength} / DEX {dexterity} / INT {intelligence}"
+            f", bow + heavy armour"
+        )
+        print()
+        strategies = {
+            name: (
+                _make_fixed_build_init(
+                    pair[0], strength, dexterity, intelligence,
+                ),
+                pair[1],
+            )
+            for name, pair in strategies.items()
+        }
 
     board_desc: str
     if args.generate_boards > 0:
@@ -325,6 +378,39 @@ def main() -> None:
         )
 
 
+def _make_fixed_build_init(
+    init_fn: Callable[..., List[PieceArg]],
+    strength: int,
+    dexterity: int,
+    intelligence: int,
+) -> Callable[..., List[PieceArg]]:
+    """Wrap an init strategy to override stat allocation and equipment.
+
+    Forces every piece to use the given STR/DEX/INT and bow + heavy armour,
+    isolating tactical differences from build advantages.
+
+    :param init_fn: The original init strategy.
+    :type init_fn: Callable
+    :param strength: STR attribute value.
+    :type strength: int
+    :param dexterity: DEX attribute value.
+    :type dexterity: int
+    :param intelligence: INT attribute value.
+    :type intelligence: int
+    :returns: A wrapped init strategy callable.
+    :rtype: Callable
+    """
+    def wrapped(init_message: InitGameMessage) -> List[PieceArg]:
+        pieces = init_fn(init_message)
+        for p in pieces:
+            p.strength = strength
+            p.dexterity = dexterity
+            p.intelligence = intelligence
+            p.equip = Point(3, 3)
+        return pieces
+    return wrapped
+
+
 def _run_single_matchup(
     p1_init_name: str,
     p1_action_name: str,
@@ -336,8 +422,20 @@ def _run_single_matchup(
     strategies: Dict[str, StrategyPair],
 ) -> None:
     """Run a single P1 vs P2 matchup."""
+    p1_init = get_init_strategy(p1_init_name)
+    p2_init = get_init_strategy(p2_init_name)
+
+    if args.fixed_build is not None:
+        strength, dexterity, intelligence = args.fixed_build
+        p1_init = _make_fixed_build_init(
+            p1_init, strength, dexterity, intelligence,
+        )
+        p2_init = _make_fixed_build_init(
+            p2_init, strength, dexterity, intelligence,
+        )
+
     p1_pair = (
-        get_init_strategy(p1_init_name),
+        p1_init,
         get_action_strategy(
             p1_action_name,
             mcts_simulations=args.mcts_simulations,
@@ -345,7 +443,7 @@ def _run_single_matchup(
         ),
     )
     p2_pair = (
-        get_init_strategy(p2_init_name),
+        p2_init,
         get_action_strategy(
             p2_action_name,
             mcts_simulations=args.mcts_simulations,
