@@ -32,9 +32,9 @@ from strategies.sniper import (
     get_sniper_action_strategy,
     get_sniper_init_strategy,
 )
-from strategies.sniper_survivor import (
-    get_sniper_survivor_action_strategy,
-    get_sniper_survivor_init_strategy,
+from strategies.sniper_tactical import (
+    get_sniper_tactical_action_strategy,
+    get_sniper_tactical_init_strategy,
 )
 from strategies.ml_sniper import (
     get_ml_sniper_action_strategy,
