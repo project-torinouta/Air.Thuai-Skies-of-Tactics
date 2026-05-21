@@ -62,7 +62,7 @@ STRATEGY_NAMES: List[str] = [
     "ranger",
     "random",
     "sniper",
-    "sniper_survivor",
+    "sniper_tactical",
     "sniper_v102",
     "sniper_v103",
     "ml_sniper",
@@ -76,7 +76,7 @@ INIT_NAMES: List[str] = [
     "ranger",
     "random",
     "sniper",
-    "sniper_survivor",
+    "sniper_tactical",
     "sniper_v102",
     "sniper_v103",
     "ml_sniper",
@@ -93,7 +93,7 @@ ACTION_NAMES: List[str] = [
     "ranger",
     "random",
     "sniper",
-    "sniper_survivor",
+    "sniper_tactical",
     "sniper_v102",
     "sniper_v103",
     "ml_sniper",
@@ -121,8 +121,8 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_ranger_init_strategy()
     if name == "sniper":
         return get_sniper_init_strategy()
-    if name == "sniper_survivor":
-        return get_sniper_survivor_init_strategy()
+    if name == "sniper_tactical":
+        return get_sniper_tactical_init_strategy()
     if name == "sniper_v102":
         return get_sniper_init_strategy_v102()
     if name == "sniper_v103":
@@ -170,8 +170,8 @@ def get_action_strategy(
         return get_ranger_action_strategy()
     if name == "sniper":
         return get_sniper_action_strategy()
-    if name == "sniper_survivor":
-        return get_sniper_survivor_action_strategy()
+    if name == "sniper_tactical":
+        return get_sniper_tactical_action_strategy()
     if name == "sniper_v102":
         return get_sniper_action_strategy_v102()
     if name == "sniper_v103":
