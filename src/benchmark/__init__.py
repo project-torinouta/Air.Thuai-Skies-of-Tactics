@@ -68,6 +68,14 @@ STRATEGY_NAMES: List[str] = [
     "ml_sniper",
 ]
 
+SNIPER_STRATEGY_NAMES: List[str] = [
+    "sniper",
+    "sniper_tactical",
+    "sniper_v102",
+    "sniper_v103",
+    "ml_sniper",
+]
+
 INIT_NAMES: List[str] = [
     "aggressive",
     "defensive",
