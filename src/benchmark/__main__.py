@@ -231,6 +231,14 @@ def parse_args() -> argparse.Namespace:
         default=8,
         help="Games per (STR, INT) cell in sweep (default: 8)",
     )
+    parser.add_argument(
+        "--sweep-type",
+        type=str,
+        default="str-int",
+        choices=["str-int", "str-dex"],
+        help="Sweep axis: 'str-int' (INT on x, DEX implied) or"
+             " 'str-dex' (DEX on x, INT implied) (default: str-int)",
+    )
     return parser.parse_args()
 
 
@@ -268,6 +276,7 @@ def main() -> None:
             games_per_cell=args.sweep_games,
             max_rounds=args.max_game_rounds,
             board_files=resolve_boards(args),
+            sweep_type=args.sweep_type,
         )
         return
 
