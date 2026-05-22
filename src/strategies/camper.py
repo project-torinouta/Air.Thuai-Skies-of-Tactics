@@ -13,17 +13,20 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
 # PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HELDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"""Dynamic sniper — STR 29 / DEX 1 / INT 0, behaviour adapts to the battle.
+"""Camper — advance to bow-range edge, then hold.
 
-Three modes switched by piece count:
-- **Outnumbered** (2v3, 1v3): flee.  Do not advance toward enemies.  Only
-  shoot if already in range — never chase.  Move away from the enemy team.
-- **Advantage** (3v2, 3v1): chase.  Close distance, finish wounded enemies.
-- **Even** (3v3, 2v2, 1v1): standard advance with focus fire.
+Replicates the Blue camp's tactic from the Saiblo replay:
+1. Advance toward the enemy until the closest target is at exactly bow
+   range (9 tiles).
+2. Stop and never move again — attack every turn.
+3. Focus fire the lowest-HP enemy.
+
+This is subtly different from the base sniper which keeps advancing
+indefinitely, wasting AP that could be used for attacks.
 """
 
 from typing import Callable, List
@@ -33,8 +36,8 @@ from strategies._utils import allocate_init_positions, calculate_distance
 from utils import ActionSet, AttackContext, PieceArg, Point
 
 
-def get_dynamic_init_strategy() -> Callable[..., List[PieceArg]]:
-    """Standard sniper init — STR 29 / DEX 1 / INT 0, bow + heavy armour."""
+def get_camper_init_strategy() -> Callable[..., List[PieceArg]]:
+    """Standard sniper init — back row, STR 29 / DEX 1 / INT 0."""
     def strategy(init_message: InitGameMessage) -> List[PieceArg]:
         board = init_message.board
         pid = init_message.id
@@ -66,14 +69,12 @@ def get_dynamic_init_strategy() -> Callable[..., List[PieceArg]]:
     return strategy
 
 
-def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
-    """Return the dynamic action strategy.
+def get_camper_action_strategy() -> Callable[..., ActionSet]:
+    """Advance to bow-range edge, then hold position.
 
-    Behaviour switches on piece count:
-    - **Outnumbered**: desperation focus fire.  ALL pieces target the globally
-      lowest-HP enemy.  No retreat — need to even the odds by trading a kill.
-    - **Advantage**: chase.  Close distance, finish wounded enemies.
-    - **Even**: standard advance with focus fire on lowest-HP target.
+    1. If any enemy is in range — attack the lowest-HP one, never move.
+    2. If no enemy is in range — advance until the closest enemy would be
+       at range 9.  Then stop permanently.
     """
     def strategy(env: Environment) -> ActionSet:
         action = ActionSet()
@@ -91,49 +92,39 @@ def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
             p for p in env.action_queue
             if p.team != current.team and p.is_alive
         ]
+        allies = [
+            p for p in env.action_queue
+            if p.team == current.team and p.id != current.id and p.is_alive
+        ]
         if not enemies:
             action.move = False
             action.attack = False
             action.spell = False
             return action
 
-        allies = [
-            p for p in env.action_queue
-            if p.team == current.team and p.id != current.id and p.is_alive
+        closest = min(
+            enemies,
+            key=lambda e: calculate_distance(current.position, e.position),
+        )
+        dist = calculate_distance(current.position, closest.position)
+
+        # ---- IN RANGE — attack, never move ----
+        in_range = [
+            e for e in enemies
+            if calculate_distance(current.position, e.position)
+            <= current.attack_range
         ]
-
-        n_enemies = len(enemies)
-        n_allies = len(allies) + 1
-        outnumbered = n_enemies > n_allies
-        advantage = n_allies > n_enemies
-
-        # Even & outnumbered: focus lowest-HP enemy to force a kill.
-        # Advantage: target closest to confirm the kill quickly.
-        if advantage:
-            target = min(
-                enemies,
-                key=lambda e: calculate_distance(current.position, e.position),
-            )
-        else:
-            target = min(enemies, key=lambda p: p.health)
-
-        dist = calculate_distance(current.position, target.position)
-
-        # ================================================================
-        # IN RANGE — attack, never waste AP on movement
-        # ================================================================
-        if dist <= current.attack_range:
-            action.move = False
+        if in_range:
+            target = min(in_range, key=lambda p: p.health)
             action.attack = True
             action.attack_context = AttackContext()
             action.attack_context.attacker = current
             action.attack_context.target = target
+            action.move = False
             action.spell = False
             return action
 
-        # ================================================================
-        # OUT OF RANGE
-        # ================================================================
+        # ---- OUT OF RANGE — advance to edge of bow range ----
         legal_moves = get_legal_moves(env)
         if not legal_moves:
             action.move = False
@@ -142,26 +133,35 @@ def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
             return action
 
         def move_score(pos: Point) -> float:
-            d = calculate_distance(pos, target.position)
-            h = float(env.board.height_map[pos.x][pos.y])
+            d = calculate_distance(pos, closest.position)
+            # Ideally we want to be at EXACTLY bow range (d=9).
+            # Prefer being at the edge over being too close.
+            if d <= current.attack_range:
+                # In range from this position — prefer range-edge (9 > 8 > 7 ...)
+                return -abs(d - float(current.attack_range))
+            # Not in range — get as close as possible
+            return -d
 
-            if advantage:
-                # Chase: close distance for the kill, prefer high ground
-                return -d + h
-            else:
-                # Even & outnumbered: advance and focus fire
-                return -d + h
-
-        best_move = max(legal_moves, key=move_score)
+        best = max(legal_moves, key=move_score)
         action.move = True
-        action.move_target = best_move
+        action.move_target = best
 
-        new_dist = calculate_distance(best_move, target.position)
+        # Advance-and-attack
+        new_dist = calculate_distance(best, closest.position)
         if new_dist <= current.attack_range:
-            action.attack = True
-            action.attack_context = AttackContext()
-            action.attack_context.attacker = current
-            action.attack_context.target = target
+            in_range_after = [
+                e for e in enemies
+                if calculate_distance(best, e.position)
+                <= current.attack_range
+            ]
+            if in_range_after:
+                target = min(in_range_after, key=lambda p: p.health)
+                action.attack = True
+                action.attack_context = AttackContext()
+                action.attack_context.attacker = current
+                action.attack_context.target = target
+            else:
+                action.attack = False
         else:
             action.attack = False
 

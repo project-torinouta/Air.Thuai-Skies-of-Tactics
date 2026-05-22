@@ -13,17 +13,18 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
 # PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HELDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"""Dynamic sniper — STR 29 / DEX 1 / INT 0, behaviour adapts to the battle.
+"""Vanguard — sacrificial frontline + fire support.
 
-Three modes switched by piece count:
-- **Outnumbered** (2v3, 1v3): flee.  Do not advance toward enemies.  Only
-  shoot if already in range — never chase.  Move away from the enemy team.
-- **Advantage** (3v2, 3v1): chase.  Close distance, finish wounded enemies.
-- **Even** (3v3, 2v2, 1v1): standard advance with focus fire.
+Uses the enemy's closest-target AI against them:
+- **Vanguard** (closest piece to the enemy): pushes ahead aggressively,
+  drawing all 3 enemies' focus fire (they all target the closest).
+- **Support** (other 2 pieces): hang back 2-3 tiles behind the vanguard,
+  taking free shots while the vanguard tanks.
+- All pieces focus the same lowest-HP target.
 """
 
 from typing import Callable, List
@@ -33,7 +34,7 @@ from strategies._utils import allocate_init_positions, calculate_distance
 from utils import ActionSet, AttackContext, PieceArg, Point
 
 
-def get_dynamic_init_strategy() -> Callable[..., List[PieceArg]]:
+def get_vanguard_init_strategy() -> Callable[..., List[PieceArg]]:
     """Standard sniper init — STR 29 / DEX 1 / INT 0, bow + heavy armour."""
     def strategy(init_message: InitGameMessage) -> List[PieceArg]:
         board = init_message.board
@@ -66,14 +67,13 @@ def get_dynamic_init_strategy() -> Callable[..., List[PieceArg]]:
     return strategy
 
 
-def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
-    """Return the dynamic action strategy.
+def get_vanguard_action_strategy() -> Callable[..., ActionSet]:
+    """Return the vanguard action strategy.
 
-    Behaviour switches on piece count:
-    - **Outnumbered**: desperation focus fire.  ALL pieces target the globally
-      lowest-HP enemy.  No retreat — need to even the odds by trading a kill.
-    - **Advantage**: chase.  Close distance, finish wounded enemies.
-    - **Even**: standard advance with focus fire on lowest-HP target.
+    Each piece checks whether it is the closest alive ally to the enemy.
+    - **Vanguard** (closest): advance aggressively, close distance.
+    - **Support** (not closest): maintain gap, shoot from safety.
+    All pieces focus the globally lowest-HP enemy.
     """
     def strategy(env: Environment) -> ActionSet:
         action = ActionSet()
@@ -102,26 +102,27 @@ def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
             if p.team == current.team and p.id != current.id and p.is_alive
         ]
 
-        n_enemies = len(enemies)
-        n_allies = len(allies) + 1
-        outnumbered = n_enemies > n_allies
-        advantage = n_allies > n_enemies
+        # Global focus-fire target: lowest-HP enemy
+        target = min(enemies, key=lambda p: p.health)
 
-        # Even & outnumbered: focus lowest-HP enemy to force a kill.
-        # Advantage: target closest to confirm the kill quickly.
-        if advantage:
-            target = min(
-                enemies,
-                key=lambda e: calculate_distance(current.position, e.position),
+        # Determine role: am I the closest alive ally to the enemy team?
+        my_dist_to_enemy = min(
+            calculate_distance(current.position, e.position) for e in enemies
+        )
+        is_vanguard = True
+        for ally in allies:
+            ally_dist = min(
+                calculate_distance(ally.position, e.position) for e in enemies
             )
-        else:
-            target = min(enemies, key=lambda p: p.health)
+            if ally_dist < my_dist_to_enemy:
+                is_vanguard = False
+                break
 
+        # ================================================================
+        # IN RANGE — attack the focus target (lowest-HP enemy).
+        # Always prioritise the primary to concentrate fire.
+        # ================================================================
         dist = calculate_distance(current.position, target.position)
-
-        # ================================================================
-        # IN RANGE — attack, never waste AP on movement
-        # ================================================================
         if dist <= current.attack_range:
             action.move = False
             action.attack = True
@@ -132,7 +133,7 @@ def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
             return action
 
         # ================================================================
-        # OUT OF RANGE
+        # OUT OF RANGE — move
         # ================================================================
         legal_moves = get_legal_moves(env)
         if not legal_moves:
@@ -143,14 +144,19 @@ def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
 
         def move_score(pos: Point) -> float:
             d = calculate_distance(pos, target.position)
-            h = float(env.board.height_map[pos.x][pos.y])
 
-            if advantage:
-                # Chase: close distance for the kill, prefer high ground
-                return -d + h
+            if is_vanguard:
+                # Vanguard: close distance aggressively to bait
+                return -d
             else:
-                # Even & outnumbered: advance and focus fire
-                return -d + h
+                # Support: stay close to vanguard but out of enemy focus
+                # Find the closest ally (likely the vanguard) and stick near them
+                d_to_ally = min(
+                    calculate_distance(pos, a.position) for a in allies
+                )
+                # Prefer being 3-4 tiles behind the vanguard
+                spacing = abs(d_to_ally - 3.5)
+                return -d - spacing * 0.5
 
         best_move = max(legal_moves, key=move_score)
         action.move = True

@@ -13,28 +13,28 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
 # PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HELDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"""Dynamic sniper — STR 29 / DEX 1 / INT 0, behaviour adapts to the battle.
+"""Parameterised strategy factory — generate variants by tweaking knobs.
 
-Three modes switched by piece count:
-- **Outnumbered** (2v3, 1v3): flee.  Do not advance toward enemies.  Only
-  shoot if already in range — never chase.  Move away from the enemy team.
-- **Advantage** (3v2, 3v1): chase.  Close distance, finish wounded enemies.
-- **Even** (3v3, 2v2, 1v1): standard advance with focus fire.
+Used by ``--sweep-action`` to explore the tactical parameter space.
 """
 
-from typing import Callable, List
+from typing import Callable, List, Tuple
 
 from env import Environment, InitGameMessage
 from strategies._utils import allocate_init_positions, calculate_distance
 from utils import ActionSet, AttackContext, PieceArg, Point
 
+# Type alias matching benchmark.StrategyPair
+StrategyPair = Tuple[Callable[..., List[PieceArg]], Callable[..., ActionSet]]
 
-def get_dynamic_init_strategy() -> Callable[..., List[PieceArg]]:
-    """Standard sniper init — STR 29 / DEX 1 / INT 0, bow + heavy armour."""
+
+def _default_init_strategy(strength=29, dexterity=1, intelligence=0,
+                           weapon=3, armor=3) -> Callable[..., List[PieceArg]]:
+    """Standard sniper init with given attributes/equipment."""
     def strategy(init_message: InitGameMessage) -> List[PieceArg]:
         board = init_message.board
         pid = init_message.id
@@ -56,26 +56,39 @@ def get_dynamic_init_strategy() -> Callable[..., List[PieceArg]]:
         piece_args: List[PieceArg] = []
         for pos in positions:
             arg = PieceArg()
-            arg.strength = 29
-            arg.dexterity = 1
-            arg.intelligence = 0
-            arg.equip = Point(3, 3)
+            arg.strength = strength
+            arg.dexterity = dexterity
+            arg.intelligence = intelligence
+            arg.equip = Point(weapon, armor)
             arg.pos = pos
             piece_args.append(arg)
         return piece_args
     return strategy
 
 
-def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
-    """Return the dynamic action strategy.
+def make_strategy(
+    target_mode: str = "closest",
+    formation_spacing: float = 0.0,
+    advance_mode: str = "always",
+    retreat_hp: int = 0,
+) -> StrategyPair:
+    """Create a strategy pair by setting tactical knobs.
 
-    Behaviour switches on piece count:
-    - **Outnumbered**: desperation focus fire.  ALL pieces target the globally
-      lowest-HP enemy.  No retreat — need to even the odds by trading a kill.
-    - **Advantage**: chase.  Close distance, finish wounded enemies.
-    - **Even**: standard advance with focus fire on lowest-HP target.
+    :param target_mode: ``"closest"``, ``"lowest_hp"``, or ``"highest_hp"``.
+    :type target_mode: str
+    :param formation_spacing: Minimum distance from allies (0 = none).
+    :type formation_spacing: float
+    :param advance_mode: ``"always"`` (keep pushing) or ``"edge"`` (stop
+        once the closest enemy is at bow range).
+    :type advance_mode: str
+    :param retreat_hp: Retreat when own HP is below this (0 = never).
+    :type retreat_hp: int
+    :returns: An (init_fn, action_fn) pair.
+    :rtype: StrategyPair
     """
-    def strategy(env: Environment) -> ActionSet:
+    init = _default_init_strategy()
+
+    def action_strategy(env: Environment) -> ActionSet:
         action = ActionSet()
         current = env.current_piece
 
@@ -91,37 +104,48 @@ def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
             p for p in env.action_queue
             if p.team != current.team and p.is_alive
         ]
+        allies = [
+            p for p in env.action_queue
+            if p.team == current.team and p.id != current.id and p.is_alive
+        ]
         if not enemies:
             action.move = False
             action.attack = False
             action.spell = False
             return action
 
-        allies = [
-            p for p in env.action_queue
-            if p.team == current.team and p.id != current.id and p.is_alive
-        ]
-
-        n_enemies = len(enemies)
-        n_allies = len(allies) + 1
-        outnumbered = n_enemies > n_allies
-        advantage = n_allies > n_enemies
-
-        # Even & outnumbered: focus lowest-HP enemy to force a kill.
-        # Advantage: target closest to confirm the kill quickly.
-        if advantage:
+        # --- Target selection ---
+        if target_mode == "closest":
             target = min(
                 enemies,
                 key=lambda e: calculate_distance(current.position, e.position),
             )
-        else:
+        elif target_mode == "highest_hp":
+            target = max(enemies, key=lambda p: p.health)
+        else:  # lowest_hp
             target = min(enemies, key=lambda p: p.health)
 
         dist = calculate_distance(current.position, target.position)
+        closest_enemy = min(
+            enemies,
+            key=lambda e: calculate_distance(current.position, e.position),
+        )
 
-        # ================================================================
-        # IN RANGE — attack, never waste AP on movement
-        # ================================================================
+        # --- Retreat check ---
+        if retreat_hp > 0 and current.health < retreat_hp:
+            legal = get_legal_moves(env)
+            if legal:
+                best = max(
+                    legal,
+                    key=lambda p: calculate_distance(p, closest_enemy.position),
+                )
+                action.move = True
+                action.move_target = best
+            action.attack = False
+            action.spell = False
+            return action
+
+        # ---- IN RANGE — attack ----
         if dist <= current.attack_range:
             action.move = False
             action.attack = True
@@ -131,9 +155,7 @@ def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
             action.spell = False
             return action
 
-        # ================================================================
-        # OUT OF RANGE
-        # ================================================================
+        # ---- OUT OF RANGE — advance ----
         legal_moves = get_legal_moves(env)
         if not legal_moves:
             action.move = False
@@ -142,22 +164,33 @@ def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
             return action
 
         def move_score(pos: Point) -> float:
-            d = calculate_distance(pos, target.position)
-            h = float(env.board.height_map[pos.x][pos.y])
+            d = calculate_distance(pos, closest_enemy.position)
 
-            if advantage:
-                # Chase: close distance for the kill, prefer high ground
-                return -d + h
+            # Formation spacing
+            spacing_penalty = 0.0
+            if formation_spacing > 0:
+                for ally in allies:
+                    ad = calculate_distance(pos, ally.position)
+                    if ad < formation_spacing:
+                        spacing_penalty += (formation_spacing - ad) * 2.0
+
+            # Advance mode
+            if advance_mode == "edge":
+                if d <= current.attack_range:
+                    range_score = -abs(d - float(current.attack_range))
+                else:
+                    range_score = -d
             else:
-                # Even & outnumbered: advance and focus fire
-                return -d + h
+                range_score = -d
+
+            return range_score - spacing_penalty
 
         best_move = max(legal_moves, key=move_score)
         action.move = True
         action.move_target = best_move
 
-        new_dist = calculate_distance(best_move, target.position)
-        if new_dist <= current.attack_range:
+        nd = calculate_distance(best_move, target.position)
+        if nd <= current.attack_range:
             action.attack = True
             action.attack_context = AttackContext()
             action.attack_context.attacker = current
@@ -168,4 +201,4 @@ def get_dynamic_action_strategy() -> Callable[..., ActionSet]:
         action.spell = False
         return action
 
-    return strategy
+    return (init, action_strategy)
