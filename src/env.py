@@ -1211,7 +1211,10 @@ class Environment:
         for piece in self.player2.pieces:
             piece_priority[piece] = self.roll_dice(1, 10) + piece.dexterity
 
-        sorted_pieces = sorted(piece_priority.keys(), key=lambda x: -piece_priority[x])
+        sorted_pieces = sorted(
+            piece_priority.keys(),
+            key=lambda x: (-piece_priority[x], random.random()),
+        )
         self.action_queue = np.array(sorted_pieces, dtype=object)
 
         for i, piece in enumerate(self.action_queue):
@@ -1849,7 +1852,10 @@ class Environment:
         for piece in self.player2.pieces:
             piece_priority[piece] = self.roll_dice(1, 10) + piece.dexterity
 
-        sorted_pieces = sorted(piece_priority.keys(), key=lambda x: -piece_priority[x])
+        sorted_pieces = sorted(
+            piece_priority.keys(),
+            key=lambda x: (-piece_priority[x], random.random()),
+        )
         self.action_queue = np.array(sorted_pieces, dtype=object)
         for i, piece in enumerate(self.action_queue):
             piece.id = i
