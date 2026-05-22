@@ -1,0 +1,7 @@
+{
+    "iteration": 0,
+    "champion": "sniper_tactical",
+    "fixed_build": [29, 1, 0],
+    "opponents": ["sniper", "sniper_tactical"],
+    "iterations": []
+}

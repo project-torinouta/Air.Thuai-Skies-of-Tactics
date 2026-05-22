@@ -17,37 +17,25 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"""Tactical sniper — STR 29, bow + heavy armour, focus-fire kill chain.
+"""Vanguard — sacrificial frontline + fire support.
 
-HL analysis of 10 games showed the decisive factor is **trade speed**: when
-we lose first blood but trade back within 1-2 rounds we win; when the enemy
-gets a free kill we lose 100%.  This version maximises kill-chain speed:
-
-- **Zero formation spacing** — all pieces converge on the globally lowest-HP
-  enemy, same as the base sniper converges on closest, but we finish kills
-  faster by picking the right target.
-- **Every turn in range: reposition for height** — does not waste AP standing
-  still.  Moves to the highest adjacent tile that keeps the target in range.
-- **Never retreat** — every trade is favourable at STR 29.
+Uses the enemy's closest-target AI against them:
+- **Vanguard** (closest piece to the enemy): pushes ahead aggressively,
+  drawing all 3 enemies' focus fire (they all target the closest).
+- **Support** (other 2 pieces): hang back 2-3 tiles behind the vanguard,
+  taking free shots while the vanguard tanks.
+- All pieces focus the same lowest-HP target.
 """
 
-from typing import Callable, List, Optional
+from typing import Callable, List
 
 from env import Environment, InitGameMessage
 from strategies._utils import allocate_init_positions, calculate_distance
 from utils import ActionSet, AttackContext, PieceArg, Point
 
 
-def get_sniper_tactical_init_strategy() -> Callable[..., List[PieceArg]]:
-    """Return the tactical sniper initialisation strategy.
-
-    STR 29, DEX 1, bow + heavy armour. Starting positions are spread to
-    create flanking options.
-
-    :returns: A callable that takes an ``InitGameMessage`` and returns
-        a list of ``PieceArg``.
-    :rtype: Callable
-    """
+def get_vanguard_init_strategy() -> Callable[..., List[PieceArg]]:
+    """Standard sniper init — STR 29 / DEX 1 / INT 0, bow + heavy armour."""
     def strategy(init_message: InitGameMessage) -> List[PieceArg]:
         board = init_message.board
         pid = init_message.id
@@ -79,15 +67,13 @@ def get_sniper_tactical_init_strategy() -> Callable[..., List[PieceArg]]:
     return strategy
 
 
-def get_sniper_tactical_action_strategy() -> Callable[..., ActionSet]:
-    """Return the tactical sniper action strategy.
+def get_vanguard_action_strategy() -> Callable[..., ActionSet]:
+    """Return the vanguard action strategy.
 
-    Kill-chain maximisation:
-    1. ALL pieces target the globally lowest-HP enemy for instant focus fire.
-    2. When in range: move to the highest tile that holds the target in range,
-       then attack — never waste AP standing still.
-    3. When out of range: advance directly (no spacing penalty).
-    4. Never retreat.
+    Each piece checks whether it is the closest alive ally to the enemy.
+    - **Vanguard** (closest): advance aggressively, close distance.
+    - **Support** (not closest): maintain gap, shoot from safety.
+    All pieces focus the globally lowest-HP enemy.
     """
     def strategy(env: Environment) -> ActionSet:
         action = ActionSet()
@@ -105,62 +91,49 @@ def get_sniper_tactical_action_strategy() -> Callable[..., ActionSet]:
             p for p in env.action_queue
             if p.team != current.team and p.is_alive
         ]
-        allies = [
-            p for p in env.action_queue
-            if p.team == current.team and p.id != current.id and p.is_alive
-        ]
         if not enemies:
             action.move = False
             action.attack = False
             action.spell = False
             return action
 
-        # Global focus-fire target: lowest-HP enemy across the whole team
-        primary_target = min(enemies, key=lambda p: p.health)
+        allies = [
+            p for p in env.action_queue
+            if p.team == current.team and p.id != current.id and p.is_alive
+        ]
 
-        # ---- helpers ----
+        # Global focus-fire target: lowest-HP enemy
+        target = min(enemies, key=lambda p: p.health)
 
-        def _height(pos: Point) -> int:
-            return env.board.height_map[pos.x][pos.y]
-
-        def _best_shot_position(
-            positions: List[Point], target: Point,
-        ) -> Optional[Point]:
-            """Among positions that keep *target* in range, pick the highest."""
-            best: Optional[Point] = None
-            best_h = -1
-            for pos in positions:
-                if calculate_distance(pos, target) <= current.attack_range:
-                    h = _height(pos)
-                    if h > best_h:
-                        best = pos
-                        best_h = h
-            return best
-
-        dist = calculate_distance(current.position, primary_target.position)
+        # Determine role: am I the closest alive ally to the enemy team?
+        my_dist_to_enemy = min(
+            calculate_distance(current.position, e.position) for e in enemies
+        )
+        is_vanguard = True
+        for ally in allies:
+            ally_dist = min(
+                calculate_distance(ally.position, e.position) for e in enemies
+            )
+            if ally_dist < my_dist_to_enemy:
+                is_vanguard = False
+                break
 
         # ================================================================
-        # 1. IN RANGE — attack, reposition for height
+        # IN RANGE — attack the focus target (lowest-HP enemy).
+        # Always prioritise the primary to concentrate fire.
         # ================================================================
+        dist = calculate_distance(current.position, target.position)
         if dist <= current.attack_range:
-            legal = get_legal_moves(env)
-            better = _best_shot_position(legal, primary_target.position) if legal else None
-
-            if better is not None:
-                action.move = True
-                action.move_target = better
-            else:
-                action.move = False
-
+            action.move = False
             action.attack = True
             action.attack_context = AttackContext()
             action.attack_context.attacker = current
-            action.attack_context.target = primary_target
+            action.attack_context.target = target
             action.spell = False
             return action
 
         # ================================================================
-        # 2. OUT OF RANGE — advance directly
+        # OUT OF RANGE — move
         # ================================================================
         legal_moves = get_legal_moves(env)
         if not legal_moves:
@@ -170,20 +143,31 @@ def get_sniper_tactical_action_strategy() -> Callable[..., ActionSet]:
             return action
 
         def move_score(pos: Point) -> float:
-            d_to_enemy = calculate_distance(pos, primary_target.position)
-            h_bonus = float(_height(pos)) * 2.0
-            return -d_to_enemy + h_bonus
+            d = calculate_distance(pos, target.position)
+
+            if is_vanguard:
+                # Vanguard: close distance aggressively to bait
+                return -d
+            else:
+                # Support: stay close to vanguard but out of enemy focus
+                # Find the closest ally (likely the vanguard) and stick near them
+                d_to_ally = min(
+                    calculate_distance(pos, a.position) for a in allies
+                )
+                # Prefer being 3-4 tiles behind the vanguard
+                spacing = abs(d_to_ally - 3.5)
+                return -d - spacing * 0.5
 
         best_move = max(legal_moves, key=move_score)
         action.move = True
         action.move_target = best_move
 
-        new_dist = calculate_distance(best_move, primary_target.position)
+        new_dist = calculate_distance(best_move, target.position)
         if new_dist <= current.attack_range:
             action.attack = True
             action.attack_context = AttackContext()
             action.attack_context.attacker = current
-            action.attack_context.target = primary_target
+            action.attack_context.target = target
         else:
             action.attack = False
 
