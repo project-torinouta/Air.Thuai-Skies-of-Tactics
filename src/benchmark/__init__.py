@@ -54,6 +54,22 @@ from strategies.camper import (
     get_camper_action_strategy,
     get_camper_init_strategy,
 )
+from strategies.sniper_heuristic import (
+    get_sniper_heuristic_action_strategy,
+    get_sniper_heuristic_init_strategy,
+)
+from strategies.cyancc77 import (
+    get_cyancc77_action_strategy,
+    get_cyancc77_init_strategy,
+)
+from strategies.search import (
+    get_search_action_strategy,
+    get_search_init_strategy,
+)
+from strategies.baiter import (
+    get_baiter_action_strategy,
+    get_baiter_init_strategy,
+)
 from strategies.ml_sniper import (
     get_ml_sniper_action_strategy,
     get_ml_sniper_init_strategy,
@@ -90,6 +106,10 @@ STRATEGY_NAMES: List[str] = [
     "dynamic",
     "vanguard",
     "camper",
+    "sniper_heuristic",
+    "cyancc77",
+    "search",
+    "baiter",
 ]
 
 SNIPER_STRATEGY_NAMES: List[str] = [
@@ -118,6 +138,10 @@ INIT_NAMES: List[str] = [
     "dynamic",
     "vanguard",
     "camper",
+    "sniper_heuristic",
+    "cyancc77",
+    "search",
+    "baiter",
 ]
 
 ACTION_NAMES: List[str] = [
@@ -141,6 +165,10 @@ ACTION_NAMES: List[str] = [
     "dynamic",
     "vanguard",
     "camper",
+    "sniper_heuristic",
+    "cyancc77",
+    "search",
+    "baiter",
 ]
 
 
@@ -183,6 +211,14 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_vanguard_init_strategy()
     if name == "camper":
         return get_camper_init_strategy()
+    if name == "sniper_heuristic":
+        return get_sniper_heuristic_init_strategy()
+    if name == "cyancc77":
+        return get_cyancc77_init_strategy()
+    if name == "search":
+        return get_search_init_strategy()
+    if name == "baiter":
+        return get_baiter_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
 
 
@@ -244,6 +280,14 @@ def get_action_strategy(
         return get_vanguard_action_strategy()
     if name == "camper":
         return get_camper_action_strategy()
+    if name == "sniper_heuristic":
+        return get_sniper_heuristic_action_strategy()
+    if name == "cyancc77":
+        return get_cyancc77_action_strategy()
+    if name == "search":
+        return get_search_action_strategy()
+    if name == "baiter":
+        return get_baiter_action_strategy()
     raise ValueError(f"Unknown action strategy: {name}")
 
 
