@@ -61,6 +61,7 @@ def parse_args() -> argparse.Namespace:
 def get_initial_property(
     player_name: str,
     token: str,
+    rank: int
 ) -> str:
     """Download a single replay JSON and save to disk.
 
@@ -128,19 +129,22 @@ def get_initial_property(
                 dexterity = 0
 
                 table = []
-                for idx, soldiers in enumerate(replay["soldiersData"]):
+                count = 0
+                for soldiers in replay["soldiersData"]:
                     if soldiers["camp"] == player_camp:
                         strength = int(soldiers["stats"]["strength"])
                         intelligence = int(soldiers["stats"]["intelligence"])
                         # we assume that all users add up to 30 property points
                         dexterity = 30 - strength - intelligence
 
-                        table.append("{:<20} {:<12} {:<20} {:<12}".format(
-                            player_name + f" p{idx + 1}",
+                        table.append("{:<6} {:<20} {:<12} {:<20} {:<12}".format(
+                            f"#{rank}",
+                            player_name + f" p{count + 1}",
                             strength,
                             intelligence,
                             dexterity
                         ))
+                        count += 1
                 return "\n".join(table)
 
     except requests.HTTPError as e:
@@ -184,20 +188,21 @@ def main() -> None:
 
         rank = 1
         table = []
-        table.append("{:<20} {:<12} {:<20} {:<12}".format(
+        table.append("{:<6} {:<20} {:<12} {:<20} {:<12}".format(
+            "rank",
             "user",
             "strength",
             "intelligence",
             "dexterity"
         ))
-        table.append("=" * 64)
+        table.append("=" * 74)
         for player in matches_data["results"]:
             username = player["user"]
             score = player["score"]
-            rank += 1
-            init = get_initial_property(username, token)
+            init = get_initial_property(username, token, rank)
             if init != "":
                 table.append(init)
+            rank += 1
 
         print("\n".join(table))
     except requests.HTTPError as e:
