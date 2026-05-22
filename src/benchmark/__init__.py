@@ -70,6 +70,10 @@ from strategies.baiter import (
     get_baiter_action_strategy,
     get_baiter_init_strategy,
 )
+from strategies.child6 import (
+    get_child6_action_strategy,
+    get_child6_init_strategy,
+)
 from strategies.ml_sniper import (
     get_ml_sniper_action_strategy,
     get_ml_sniper_init_strategy,
@@ -110,6 +114,7 @@ STRATEGY_NAMES: List[str] = [
     "cyancc77",
     "search",
     "baiter",
+    "child6",
 ]
 
 SNIPER_STRATEGY_NAMES: List[str] = [
@@ -142,6 +147,7 @@ INIT_NAMES: List[str] = [
     "cyancc77",
     "search",
     "baiter",
+    "child6",
 ]
 
 ACTION_NAMES: List[str] = [
@@ -169,6 +175,7 @@ ACTION_NAMES: List[str] = [
     "cyancc77",
     "search",
     "baiter",
+    "child6",
 ]
 
 
@@ -219,6 +226,8 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_search_init_strategy()
     if name == "baiter":
         return get_baiter_init_strategy()
+    if name == "child6":
+        return get_child6_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
 
 
@@ -288,6 +297,8 @@ def get_action_strategy(
         return get_search_action_strategy()
     if name == "baiter":
         return get_baiter_action_strategy()
+    if name == "child6":
+        return get_child6_action_strategy()
     raise ValueError(f"Unknown action strategy: {name}")
 
 
