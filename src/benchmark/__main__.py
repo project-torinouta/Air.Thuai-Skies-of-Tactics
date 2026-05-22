@@ -31,7 +31,11 @@ from benchmark.report import print_results_table, print_win_rate_summary
 from benchmark.runner import run_matchup_series
 from env import InitGameMessage
 from utils import PieceArg, Point
-from benchmark.sweep import run_sweep
+from benchmark.sweep import (
+    _ACTION_PARAM_RANGES,
+    run_sweep_init,
+    run_sweep_action,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -230,16 +234,23 @@ def parse_args() -> argparse.Namespace:
         help="Show game output during benchmark",
     )
     parser.add_argument(
-        "--sweep",
+        "--sweep-init",
         type=str,
         default=None,
-        help="Output file for attribute-sweep heatmap (e.g. sweep.png)",
+        help="Output file for attribute-sweep heatmap (e.g. sweep_init.png)",
     )
     parser.add_argument(
-        "--sweep-games",
+        "--sweep-action",
+        type=str,
+        default=None,
+        help="Output file for action-parameter sweep (e.g. sweep_action.png)",
+    )
+    parser.add_argument(
+        "--sweep-rounds",
         type=int,
         default=8,
-        help="Games per (STR, INT) cell in sweep (default: 8)",
+        help="Games per cell in sweep (default: 8).  Applies to both"
+             " --sweep-init and --sweep-action.",
     )
     parser.add_argument(
         "--sweep-type",
@@ -247,7 +258,22 @@ def parse_args() -> argparse.Namespace:
         default="str-int",
         choices=["str-int", "str-dex"],
         help="Sweep axis: 'str-int' (INT on x, DEX implied) or"
-             " 'str-dex' (DEX on x, INT implied) (default: str-int)",
+             " 'str-dex' (DEX on x, INT implied) (default: str-int)."
+             " Only for --sweep-init.",
+    )
+    parser.add_argument(
+        "--sweep-action-param-x",
+        type=str,
+        default="target_mode",
+        choices=list(_ACTION_PARAM_RANGES.keys()),
+        help="X-axis parameter for --sweep-action (default: target_mode)",
+    )
+    parser.add_argument(
+        "--sweep-action-param-y",
+        type=str,
+        default="formation_spacing",
+        choices=list(_ACTION_PARAM_RANGES.keys()),
+        help="Y-axis parameter for --sweep-action (default: formation_spacing)",
     )
     parser.add_argument(
         "--fixed-build",
@@ -294,16 +320,30 @@ def main() -> None:
         print(f"Active strategies ({len(active_names)}): {', '.join(active_names)}")
         print()
 
-    if args.sweep is not None:
+    if args.sweep_init is not None:
         if not try_init_matplotlib():
             print("matplotlib not installed. Install with: pip install matplotlib")
             return
-        run_sweep(
-            output=args.sweep,
-            games_per_cell=args.sweep_games,
+        run_sweep_init(
+            output=args.sweep_init,
+            games_per_cell=args.sweep_rounds,
             max_rounds=args.max_game_rounds,
             board_files=resolve_boards(args),
             sweep_type=args.sweep_type,
+        )
+        return
+
+    if args.sweep_action is not None:
+        if not try_init_matplotlib():
+            print("matplotlib not installed. Install with: pip install matplotlib")
+            return
+        run_sweep_action(
+            output=args.sweep_action,
+            param_x=args.sweep_action_param_x,
+            param_y=args.sweep_action_param_y,
+            games_per_cell=args.sweep_rounds,
+            max_rounds=args.max_game_rounds,
+            board_files=resolve_boards(args),
         )
         return
 

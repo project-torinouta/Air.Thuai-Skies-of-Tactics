@@ -46,6 +46,14 @@ from strategies.dynamic import (
     get_dynamic_action_strategy,
     get_dynamic_init_strategy,
 )
+from strategies.vanguard import (
+    get_vanguard_action_strategy,
+    get_vanguard_init_strategy,
+)
+from strategies.camper import (
+    get_camper_action_strategy,
+    get_camper_init_strategy,
+)
 from strategies.ml_sniper import (
     get_ml_sniper_action_strategy,
     get_ml_sniper_init_strategy,
@@ -80,6 +88,8 @@ STRATEGY_NAMES: List[str] = [
     "high_ground",
     "zoner",
     "dynamic",
+    "vanguard",
+    "camper",
 ]
 
 SNIPER_STRATEGY_NAMES: List[str] = [
@@ -106,6 +116,8 @@ INIT_NAMES: List[str] = [
     "high_ground",
     "zoner",
     "dynamic",
+    "vanguard",
+    "camper",
 ]
 
 ACTION_NAMES: List[str] = [
@@ -127,6 +139,8 @@ ACTION_NAMES: List[str] = [
     "high_ground",
     "zoner",
     "dynamic",
+    "vanguard",
+    "camper",
 ]
 
 
@@ -165,6 +179,10 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_sniper_variant_init_strategy()
     if name == "dynamic":
         return get_dynamic_init_strategy()
+    if name == "vanguard":
+        return get_vanguard_init_strategy()
+    if name == "camper":
+        return get_camper_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
 
 
@@ -222,6 +240,10 @@ def get_action_strategy(
         return get_zoner_action_strategy()
     if name == "dynamic":
         return get_dynamic_action_strategy()
+    if name == "vanguard":
+        return get_vanguard_action_strategy()
+    if name == "camper":
+        return get_camper_action_strategy()
     raise ValueError(f"Unknown action strategy: {name}")
 
 
