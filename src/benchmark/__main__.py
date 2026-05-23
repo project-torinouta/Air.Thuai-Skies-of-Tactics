@@ -28,7 +28,7 @@ from benchmark.chart import (
     try_init_matplotlib,
 )
 from benchmark.report import print_results_table, print_win_rate_summary
-from benchmark.runner import run_matchup_series
+from benchmark.runner import run_matchup_series, run_single_game
 from env import InitGameMessage
 from utils import PieceArg, Point
 from benchmark.sweep import (
@@ -36,6 +36,7 @@ from benchmark.sweep import (
     run_sweep_init,
     run_sweep_action,
 )
+from debug_trace import make_debug_callback
 
 
 def parse_args() -> argparse.Namespace:
@@ -284,6 +285,12 @@ def parse_args() -> argparse.Namespace:
         help="Force all strategies to use the given stat allocation and"
              " bow + heavy armour.  Example: --fixed-build 29 1 0",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Print every piece's position and HP each round (single matchup only)",
+    )
     return parser.parse_args()
 
 
@@ -505,6 +512,13 @@ def _run_single_matchup(
     print(f"Matchup: {p1_label} (P1) vs {p2_label} (P2)")
     print(f"  Init: P1={p1_init_name}, P2={p2_init_name}")
     print(f"  Action: P1={p1_action_name}, P2={p2_action_name}")
+
+    if args.debug:
+        _run_debug_matchup(
+            board_files, p1_pair, p2_pair, args, p1_label, p2_label,
+        )
+        return
+
     print("Progress: ", end="", flush=True)
     series = run_matchup_series(
         board_files, p1_pair, p2_pair,
@@ -533,6 +547,30 @@ def _run_single_matchup(
             )
         else:
             print("matplotlib not installed. Install with: pip install matplotlib")
+
+
+def _run_debug_matchup(
+    board_files: List[str],
+    p1_pair: StrategyPair,
+    p2_pair: StrategyPair,
+    args: argparse.Namespace,
+    p1_label: str,
+    p2_label: str,
+) -> None:
+    """Run a single game with per-round debug output."""
+    import random as _random
+
+    board = _random.choice(board_files)
+    debug_cb = make_debug_callback()
+    result = run_single_game(
+        board, p1_pair, p2_pair,
+        max_rounds=args.max_game_rounds,
+        verbose=args.verbose,
+        round_callback=debug_cb,
+        suppress_stdout=False,
+    )
+    print(f"Game result: {result.result}")
+    print(f"Rounds: {result.rounds}")
 
 
 def _run_round_robin(

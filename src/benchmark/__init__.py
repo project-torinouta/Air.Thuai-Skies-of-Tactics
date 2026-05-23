@@ -70,6 +70,46 @@ from strategies.baiter import (
     get_baiter_action_strategy,
     get_baiter_init_strategy,
 )
+from strategies.child6 import (
+    get_child6_action_strategy,
+    get_child6_init_strategy,
+)
+from strategies.hc_sniper import (
+    get_hc_sniper_action_strategy,
+    get_hc_sniper_init_strategy,
+)
+from strategies.mcts_original import (
+    get_mcts_original_action_strategy,
+    get_mcts_original_init_strategy,
+)
+from strategies.mcts_v2 import (
+    get_mcts_v2_action_strategy,
+    get_mcts_v2_init_strategy,
+)
+from strategies.mcts_plus import (
+    get_mcts_plus_action_strategy,
+    get_mcts_plus_init_strategy,
+)
+from strategies.formation_mcts import (
+    get_formation_mcts_action_strategy,
+    get_formation_mcts_init_strategy,
+)
+from strategies.ab_search import (
+    get_ab_search_action_strategy,
+    get_ab_search_init_strategy,
+)
+from strategies.ab_pvs import (
+    get_ab_pvs_action_strategy,
+    get_ab_pvs_init_strategy,
+)
+from strategies.spearhead import (
+    get_spearhead_action_strategy,
+    get_spearhead_init_strategy,
+)
+from strategies.mcts_target import (
+    get_mcts_target_action_strategy,
+    get_mcts_target_init_strategy,
+)
 from strategies.ml_sniper import (
     get_ml_sniper_action_strategy,
     get_ml_sniper_init_strategy,
@@ -89,7 +129,10 @@ STRATEGY_NAMES: List[str] = [
     "aggressive",
     "defensive",
     "mcts",
+    "mcts_original",
     "mcts_improved",
+    "mcts_v2",
+    "mcts_plus",
     "alpha_beta",
     "tactical",
     "warrior",
@@ -110,6 +153,13 @@ STRATEGY_NAMES: List[str] = [
     "cyancc77",
     "search",
     "baiter",
+    "child6",
+    "hc_sniper",
+    "formation_mcts",
+    "ab_search",
+    "ab_pvs",
+    "spearhead",
+    "mcts_target",
 ]
 
 SNIPER_STRATEGY_NAMES: List[str] = [
@@ -142,13 +192,24 @@ INIT_NAMES: List[str] = [
     "cyancc77",
     "search",
     "baiter",
+    "child6",
+    "hc_sniper",
+    "formation_mcts",
+    "mcts_v2",
+    "ab_search",
+    "ab_pvs",
+    "spearhead",
+    "mcts_target",
 ]
 
 ACTION_NAMES: List[str] = [
     "aggressive",
     "defensive",
     "mcts",
+    "mcts_original",
     "mcts_improved",
+    "mcts_v2",
+    "mcts_plus",
     "alpha_beta",
     "tactical",
     "warrior",
@@ -169,6 +230,13 @@ ACTION_NAMES: List[str] = [
     "cyancc77",
     "search",
     "baiter",
+    "child6",
+    "hc_sniper",
+    "formation_mcts",
+    "ab_search",
+    "ab_pvs",
+    "spearhead",
+    "mcts_target",
 ]
 
 
@@ -219,6 +287,22 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_search_init_strategy()
     if name == "baiter":
         return get_baiter_init_strategy()
+    if name == "child6":
+        return get_child6_init_strategy()
+    if name == "hc_sniper":
+        return get_hc_sniper_init_strategy()
+    if name == "formation_mcts":
+        return get_formation_mcts_init_strategy()
+    if name == "mcts_v2":
+        return get_mcts_v2_init_strategy()
+    if name == "ab_search":
+        return get_ab_search_init_strategy()
+    if name == "ab_pvs":
+        return get_ab_pvs_init_strategy()
+    if name == "spearhead":
+        return get_spearhead_init_strategy()
+    if name == "mcts_target":
+        return get_mcts_target_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
 
 
@@ -246,8 +330,14 @@ def get_action_strategy(
         return get_defensive_action_strategy()
     if name == "mcts":
         return get_mcts_action_strategy(mcts_simulations)
+    if name == "mcts_original":
+        return get_mcts_original_action_strategy(mcts_simulations)
+    if name == "mcts_v2":
+        return get_mcts_v2_action_strategy(max(mcts_simulations, 300))
     if name == "mcts_improved":
         return get_improved_mcts_strategy(simulation_count=200)
+    if name == "mcts_plus":
+        return get_mcts_plus_action_strategy(mcts_simulations)
     if name == "alpha_beta":
         return get_alpha_beta_action_strategy(alpha_beta_depth)
     if name == "tactical":
@@ -288,6 +378,20 @@ def get_action_strategy(
         return get_search_action_strategy()
     if name == "baiter":
         return get_baiter_action_strategy()
+    if name == "child6":
+        return get_child6_action_strategy()
+    if name == "hc_sniper":
+        return get_hc_sniper_action_strategy()
+    if name == "formation_mcts":
+        return get_formation_mcts_action_strategy(max(mcts_simulations, 300))
+    if name == "ab_search":
+        return get_ab_search_action_strategy(search_depth=6)
+    if name == "ab_pvs":
+        return get_ab_pvs_action_strategy(search_depth=6)
+    if name == "spearhead":
+        return get_spearhead_action_strategy()
+    if name == "mcts_target":
+        return get_mcts_target_action_strategy(max(mcts_simulations, 300))
     raise ValueError(f"Unknown action strategy: {name}")
 
 

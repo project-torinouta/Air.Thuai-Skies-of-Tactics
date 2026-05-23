@@ -21,6 +21,10 @@ from strategies.ml_sniper import (
     get_ml_sniper_init_strategy,
     get_ml_sniper_action_strategy
 )
+from strategies.mcts_original import (
+    get_mcts_original_init_strategy,
+    get_mcts_original_action_strategy
+)
 from utils import ActionSet
 
 ERROR_MAP = ["RE", "TLE", "OLE"]
