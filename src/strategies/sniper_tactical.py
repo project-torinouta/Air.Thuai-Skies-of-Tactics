@@ -1,72 +1,34 @@
-# Copyright 2026 AshGrey <ashgrey.huaier@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy of
-# this software and associated documentation files (the "Software"), to deal in the
-# Software without restriction, including without limitation the rights to use, copy,
-# modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so, subject to the
-# following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED
-# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""Sniper Tactical — replicated from Red team (Sniper) replay behaviour.
 
-"""Tactical sniper — STR 29, bow + heavy armour, focus-fire kill chain.
-
-HL analysis of 10 games showed the decisive factor is **trade speed**: when
-we lose first blood but trade back within 1-2 rounds we win; when the enemy
-gets a free kill we lose 100%.  This version maximises kill-chain speed:
-
-- **Zero formation spacing** — all pieces converge on the globally lowest-HP
-  enemy, same as the base sniper converges on closest, but we finish kills
-  faster by picking the right target.
-- **Every turn in range: reposition for height** — does not waste AP standing
-  still.  Moves to the highest adjacent tile that keeps the target in range.
-- **Never retreat** — every trade is favourable at STR 29.
+Core: extreme focus-fire + close-range positional denial.
 """
 
-from typing import Callable, List, Optional
+from typing import Callable, List
 
 from env import Environment, InitGameMessage
-from strategies._utils import allocate_init_positions, calculate_distance
+from strategies._utils import allocate_init_positions
 from utils import ActionSet, AttackContext, PieceArg, Point
 
 
 def get_sniper_tactical_init_strategy() -> Callable[..., List[PieceArg]]:
-    """Return the tactical sniper initialisation strategy.
-
-    STR 29, DEX 1, bow + heavy armour. Starting positions are spread to
-    create flanking options.
-
-    :returns: A callable that takes an ``InitGameMessage`` and returns
-        a list of ``PieceArg``.
-    :rtype: Callable
-    """
+    """Standard STR 29 / DEX 1 / INT 0 sniper init."""
     def strategy(init_message: InitGameMessage) -> List[PieceArg]:
         board = init_message.board
         pid = init_message.id
         if pid == 1:
             order = [
-                (x, y)
-                for y in range(5, 0, -1)
+                (x, y) for y in range(5, 0, -1)
                 for x in range(2, board.width - 2)
             ]
         else:
             order = [
-                (x, y)
-                for y in range(board.height - 6, board.height)
+                (x, y) for y in range(board.height - 6, board.height)
                 for x in range(board.width - 3, 2, -1)
             ]
         positions = allocate_init_positions(
             board, pid, init_message.piece_cnt, order,
         )
-        piece_args: List[PieceArg] = []
+        piece_args = []
         for pos in positions:
             arg = PieceArg()
             arg.strength = 29
@@ -80,15 +42,7 @@ def get_sniper_tactical_init_strategy() -> Callable[..., List[PieceArg]]:
 
 
 def get_sniper_tactical_action_strategy() -> Callable[..., ActionSet]:
-    """Return the tactical sniper action strategy.
-
-    Kill-chain maximisation:
-    1. ALL pieces target the globally lowest-HP enemy for instant focus fire.
-    2. When in range: move to the highest tile that holds the target in range,
-       then attack — never waste AP standing still.
-    3. When out of range: advance directly (no spacing penalty).
-    4. Never retreat.
-    """
+    """Red-team (Sniper) replication: focus-fire + close-range denial."""
     def strategy(env: Environment) -> ActionSet:
         action = ActionSet()
         current = env.current_piece
@@ -99,15 +53,9 @@ def get_sniper_tactical_action_strategy() -> Callable[..., ActionSet]:
             action.spell = False
             return action
 
-        from strategy_utils import get_legal_moves
-
         enemies = [
             p for p in env.action_queue
             if p.team != current.team and p.is_alive
-        ]
-        allies = [
-            p for p in env.action_queue
-            if p.team == current.team and p.id != current.id and p.is_alive
         ]
         if not enemies:
             action.move = False
@@ -115,77 +63,57 @@ def get_sniper_tactical_action_strategy() -> Callable[..., ActionSet]:
             action.spell = False
             return action
 
-        # Global focus-fire target: lowest-HP enemy across the whole team
-        primary_target = min(enemies, key=lambda p: p.health)
+        def target_priority(e):
+            dist = abs(current.position.x - e.position.x) + abs(current.position.y - e.position.y)
+            return e.health * 1.0 + dist * 2.0
 
-        # ---- helpers ----
+        global_target = min(enemies, key=target_priority)
 
-        def _height(pos: Point) -> int:
-            return env.board.height_map[pos.x][pos.y]
-
-        def _best_shot_position(
-            positions: List[Point], target: Point,
-        ) -> Optional[Point]:
-            """Among positions that keep *target* in range, pick the highest."""
-            best: Optional[Point] = None
-            best_h = -1
-            for pos in positions:
-                if calculate_distance(pos, target) <= current.attack_range:
-                    h = _height(pos)
-                    if h > best_h:
-                        best = pos
-                        best_h = h
-            return best
-
-        dist = calculate_distance(current.position, primary_target.position)
-
-        # ================================================================
-        # 1. IN RANGE — attack, reposition for height
-        # ================================================================
-        if dist <= current.attack_range:
-            legal = get_legal_moves(env)
-            better = _best_shot_position(legal, primary_target.position) if legal else None
-
-            if better is not None:
-                action.move = True
-                action.move_target = better
-            else:
-                action.move = False
-
-            action.attack = True
-            action.attack_context = AttackContext()
-            action.attack_context.attacker = current
-            action.attack_context.target = primary_target
-            action.spell = False
-            return action
-
-        # ================================================================
-        # 2. OUT OF RANGE — advance directly
-        # ================================================================
+        from strategy_utils import get_legal_moves
         legal_moves = get_legal_moves(env)
         if not legal_moves:
-            action.move = False
-            action.attack = False
-            action.spell = False
-            return action
+            legal_moves = [current.position]
 
-        def move_score(pos: Point) -> float:
-            d_to_enemy = calculate_distance(pos, primary_target.position)
-            h_bonus = float(_height(pos)) * 2.0
-            return -d_to_enemy + h_bonus
+        def d(pos, tx, ty) -> float:
+            return abs(pos.x - tx) + abs(pos.y - ty)
 
-        best_move = max(legal_moves, key=move_score)
-        action.move = True
-        action.move_target = best_move
+        best_move = current.position
+        best_score = -999999.0
 
-        new_dist = calculate_distance(best_move, primary_target.position)
-        if new_dist <= current.attack_range:
+        for m in legal_moves:
+            dist_to_target = d(m, global_target.position.x, global_target.position.y)
+            score = -dist_to_target * 10.0
+            if dist_to_target == 1:
+                score += 5.0
+            if dist_to_target == 0:
+                score -= 100.0
+            if score > best_score:
+                best_score = score
+                best_move = m
+
+        action.move = (best_move.x != current.position.x or best_move.y != current.position.y)
+        if action.move:
+            action.move_target = best_move
+
+        final_pos = action.move_target if action.move else current.position
+        if d(final_pos, global_target.position.x, global_target.position.y) <= current.attack_range:
             action.attack = True
             action.attack_context = AttackContext()
             action.attack_context.attacker = current
-            action.attack_context.target = primary_target
+            action.attack_context.target = global_target
         else:
-            action.attack = False
+            reachable_enemies = [
+                e for e in enemies
+                if d(final_pos, e.position.x, e.position.y) <= current.attack_range
+            ]
+            if reachable_enemies:
+                fallback_target = min(reachable_enemies, key=lambda e: e.health)
+                action.attack = True
+                action.attack_context = AttackContext()
+                action.attack_context.attacker = current
+                action.attack_context.target = fallback_target
+            else:
+                action.attack = False
 
         action.spell = False
         return action
