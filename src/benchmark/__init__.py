@@ -6,6 +6,58 @@ from strategies.aggressive import (
     get_aggressive_init_strategy,
 )
 from strategies.alpha_beta import get_alpha_beta_action_strategy
+from strategies.alpha_beta_tactical import (
+    get_alpha_beta_tactical_action_strategy,
+    get_alpha_beta_tactical_init_strategy,
+)
+from strategies.hybrid_mcts_ab import (
+    get_hybrid_mcts_ab_action_strategy,
+    get_hybrid_mcts_ab_init_strategy,
+)
+from strategies.adaptive_phase import (
+    get_adaptive_phase_action_strategy,
+    get_adaptive_phase_init_strategy,
+)
+from strategies.industrial_mcts import (
+    get_industrial_mcts_action_strategy,
+    get_industrial_mcts_init_strategy,
+)
+from strategies.industrial_adaptive import (
+    get_industrial_adaptive_action_strategy,
+    get_industrial_adaptive_init_strategy,
+)
+from strategies.blue_rush import (
+    get_blue_rush_action_strategy,
+    get_blue_rush_init_strategy,
+)
+from strategies.adaptive_phase_v2 import (
+    get_adaptive_phase_v2_action_strategy,
+    get_adaptive_phase_v2_init_strategy,
+)
+from strategies.adaptive_phase_v3 import (
+    get_adaptive_phase_v3_action_strategy,
+    get_adaptive_phase_v3_init_strategy,
+)
+from strategies.adaptive_phase_v4 import (
+    get_adaptive_phase_v4_action_strategy,
+    get_adaptive_phase_v4_init_strategy,
+)
+from strategies.adaptive_phase_v5 import (
+    get_adaptive_phase_v5_action_strategy,
+    get_adaptive_phase_v5_init_strategy,
+)
+from strategies.adaptive_phase_v6 import (
+    get_adaptive_phase_v6_action_strategy,
+    get_adaptive_phase_v6_init_strategy,
+)
+from strategies.adaptive_phase_v51 import (
+    get_adaptive_phase_v51_action_strategy,
+    get_adaptive_phase_v51_init_strategy,
+)
+from strategies.adaptive_phase_v52 import (
+    get_adaptive_phase_v52_action_strategy,
+    get_adaptive_phase_v52_init_strategy,
+)
 from strategies.defensive import (
     get_defensive_action_strategy,
     get_defensive_init_strategy,
@@ -106,6 +158,10 @@ from strategies.spearhead import (
     get_spearhead_action_strategy,
     get_spearhead_init_strategy,
 )
+from strategies.focus_hunter import (
+    get_focus_hunter_action_strategy,
+    get_focus_hunter_init_strategy,
+)
 from strategies.mcts_target import (
     get_mcts_target_action_strategy,
     get_mcts_target_init_strategy,
@@ -134,6 +190,19 @@ STRATEGY_NAMES: List[str] = [
     "mcts_v2",
     "mcts_plus",
     "alpha_beta",
+    "alpha_beta_tactical",
+    "hybrid_mcts_ab",
+    "adaptive_phase",
+    "industrial_mcts",
+    "industrial_adaptive",
+    "blue_rush",
+    "adaptive_phase_v2",
+    "adaptive_phase_v3",
+    "adaptive_phase_v4",
+    "adaptive_phase_v5",
+    "adaptive_phase_v6",
+    "adaptive_phase_v51",
+    "adaptive_phase_v52",
     "tactical",
     "warrior",
     "ranger",
@@ -160,6 +229,7 @@ STRATEGY_NAMES: List[str] = [
     "ab_pvs",
     "spearhead",
     "mcts_target",
+    "focus_hunter",
 ]
 
 SNIPER_STRATEGY_NAMES: List[str] = [
@@ -200,6 +270,19 @@ INIT_NAMES: List[str] = [
     "ab_pvs",
     "spearhead",
     "mcts_target",
+    "alpha_beta_tactical",
+    "hybrid_mcts_ab",
+    "adaptive_phase",
+    "industrial_mcts",
+    "industrial_adaptive",
+    "blue_rush",
+    "adaptive_phase_v2",
+    "adaptive_phase_v3",
+    "adaptive_phase_v4",
+    "adaptive_phase_v5",
+    "adaptive_phase_v6",
+    "adaptive_phase_v51",
+    "adaptive_phase_v52",
 ]
 
 ACTION_NAMES: List[str] = [
@@ -211,6 +294,19 @@ ACTION_NAMES: List[str] = [
     "mcts_v2",
     "mcts_plus",
     "alpha_beta",
+    "alpha_beta_tactical",
+    "hybrid_mcts_ab",
+    "adaptive_phase",
+    "industrial_mcts",
+    "industrial_adaptive",
+    "blue_rush",
+    "adaptive_phase_v2",
+    "adaptive_phase_v3",
+    "adaptive_phase_v4",
+    "adaptive_phase_v5",
+    "adaptive_phase_v6",
+    "adaptive_phase_v51",
+    "adaptive_phase_v52",
     "tactical",
     "warrior",
     "ranger",
@@ -237,6 +333,7 @@ ACTION_NAMES: List[str] = [
     "ab_pvs",
     "spearhead",
     "mcts_target",
+    "focus_hunter",
 ]
 
 
@@ -303,6 +400,34 @@ def get_init_strategy(name: str) -> Callable[..., List[PieceArg]]:
         return get_spearhead_init_strategy()
     if name == "mcts_target":
         return get_mcts_target_init_strategy()
+    if name == "focus_hunter":
+        return get_focus_hunter_init_strategy()
+    if name == "alpha_beta_tactical":
+        return get_alpha_beta_tactical_init_strategy()
+    if name == "hybrid_mcts_ab":
+        return get_hybrid_mcts_ab_init_strategy()
+    if name == "adaptive_phase":
+        return get_adaptive_phase_init_strategy()
+    if name == "industrial_mcts":
+        return get_industrial_mcts_init_strategy()
+    if name == "industrial_adaptive":
+        return get_industrial_adaptive_init_strategy()
+    if name == "blue_rush":
+        return get_blue_rush_init_strategy()
+    if name == "adaptive_phase_v2":
+        return get_adaptive_phase_v2_init_strategy()
+    if name == "adaptive_phase_v3":
+        return get_adaptive_phase_v3_init_strategy()
+    if name == "adaptive_phase_v4":
+        return get_adaptive_phase_v4_init_strategy()
+    if name == "adaptive_phase_v5":
+        return get_adaptive_phase_v5_init_strategy()
+    if name == "adaptive_phase_v6":
+        return get_adaptive_phase_v6_init_strategy()
+    if name == "adaptive_phase_v51":
+        return get_adaptive_phase_v51_init_strategy()
+    if name == "adaptive_phase_v52":
+        return get_adaptive_phase_v52_init_strategy()
     raise ValueError(f"Unknown init strategy: {name}")
 
 
@@ -340,6 +465,32 @@ def get_action_strategy(
         return get_mcts_plus_action_strategy(mcts_simulations)
     if name == "alpha_beta":
         return get_alpha_beta_action_strategy(alpha_beta_depth)
+    if name == "alpha_beta_tactical":
+        return get_alpha_beta_tactical_action_strategy(search_depth=3)
+    if name == "hybrid_mcts_ab":
+        return get_hybrid_mcts_ab_action_strategy()
+    if name == "adaptive_phase":
+        return get_adaptive_phase_action_strategy()
+    if name == "industrial_mcts":
+        return get_industrial_mcts_action_strategy()
+    if name == "industrial_adaptive":
+        return get_industrial_adaptive_action_strategy()
+    if name == "blue_rush":
+        return get_blue_rush_action_strategy()
+    if name == "adaptive_phase_v2":
+        return get_adaptive_phase_v2_action_strategy()
+    if name == "adaptive_phase_v3":
+        return get_adaptive_phase_v3_action_strategy()
+    if name == "adaptive_phase_v4":
+        return get_adaptive_phase_v4_action_strategy()
+    if name == "adaptive_phase_v5":
+        return get_adaptive_phase_v5_action_strategy()
+    if name == "adaptive_phase_v6":
+        return get_adaptive_phase_v6_action_strategy()
+    if name == "adaptive_phase_v51":
+        return get_adaptive_phase_v51_action_strategy()
+    if name == "adaptive_phase_v52":
+        return get_adaptive_phase_v52_action_strategy()
     if name == "tactical":
         return get_tactical_action_strategy()
     if name == "warrior":
@@ -392,6 +543,8 @@ def get_action_strategy(
         return get_spearhead_action_strategy()
     if name == "mcts_target":
         return get_mcts_target_action_strategy(max(mcts_simulations, 300))
+    if name == "focus_hunter":
+        return get_focus_hunter_action_strategy()
     raise ValueError(f"Unknown action strategy: {name}")
 
 
