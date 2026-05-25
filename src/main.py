@@ -17,9 +17,9 @@ import sys
 from env import Environment, InitGameMessage, Player
 from json_converter import action_to_dict, env_from_state_json
 from saiblo_client import SaibloClient
-from strategies.child6 import (
-    get_child6_init_strategy,
-    get_child6_action_strategy
+from strategies.adaptive_phase_v5 import (
+    get_adaptive_phase_v5_init_strategy,
+    get_adaptive_phase_v5_action_strategy
 )
 from utils import ActionSet
 
@@ -91,8 +91,8 @@ def run() -> None:
 
     args = parse_args()
 
-    action_strategy = get_child6_action_strategy()
-    init_strategy = get_child6_init_strategy()
+    action_strategy = get_adaptive_phase_v5_action_strategy()
+    init_strategy = get_adaptive_phase_v5_init_strategy()
 
     env = Environment(local_mode=False, if_log=0)
     env.init_board_only()

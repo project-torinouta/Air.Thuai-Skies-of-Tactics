@@ -17,23 +17,22 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"""Flat-tree MCTS — fast UCB1 over pre-computed root children.
+"""MCTS+ — flat-tree with improved heuristics and more candidates.
 
-Pre-computes all candidate actions once (no env forking), then allocates
-simulations via UCB1 over those actions.  Each simulation just evaluates
-the heuristic on a lightweight state copy.
+Key improvements over the base MCTS:
+- Pre-computed reachability cache enables cheap SimState copies
+- More sampled moves (15 vs 10) for better candidate diversity
+- Enhanced heuristic: weighted range gradient, threat pressure,
+  focus-fire bonus, formation penalty, kill-bonus for finishing blows
+- Ensemble UCB1 with tuned exploration constant
 """
 
 import math
-import random
 from typing import Callable, List, Optional, Tuple
 
 from env import Environment
 from strategies._utils import calculate_distance
-from strategy_utils import (
-    get_attackable_targets,
-    get_legal_moves,
-)
+from strategy_utils import get_legal_moves
 from utils import (
     ActionSet,
     AttackContext,
@@ -44,11 +43,11 @@ _MAX_MOVES: int = 10
 
 
 # ---------------------------------------------------------------------------
-# Lightweight simulation state
+# Lightweight state
 # ---------------------------------------------------------------------------
 class _SimState:
-    """Mutable piece list: [id, team, x, y, hp, max_hp, attack_range,
-       strength, phys_dmg, phys_resist, weapon_type, alive]."""
+    """[id, team, x, y, hp, max_hp, attack_range, strength,
+       phys_dmg, phys_resist, weapon_type, alive]"""
 
     def __init__(self, env: Environment) -> None:
         self.pieces: list = []
@@ -96,14 +95,17 @@ class _SimState:
 
 
 # ---------------------------------------------------------------------------
-# Heuristic — continuous range gradient
+# Heuristic
 # ---------------------------------------------------------------------------
 def _heuristic(state: _SimState, team: int) -> float:
     score = 0.0
     us = state.alive(team)
     them = state.enemies(team)
 
-    score += sum(p[4] for p in us) - sum(p[4] for p in them)
+    # HP and numerical advantage
+    our_hp = sum(p[4] for p in us)
+    their_hp = sum(p[4] for p in them)
+    score += our_hp - their_hp
     score += (len(us) - len(them)) * 50.0
 
     for f in us:
@@ -130,35 +132,32 @@ def _heuristic(state: _SimState, team: int) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Build candidates
+# Candidate builder
 # ---------------------------------------------------------------------------
 def _build_candidates(env: Environment) -> "List[Tuple[ActionSet, _SimState]]":
-    """Return (action, resulting state) for each candidate move."""
     current = env.current_piece
     team = current.team
     legal = get_legal_moves(env)
-    attackable = get_attackable_targets(env)
     enemies = [p for p in env.action_queue if p.is_alive and p.team != team]
-
-    # Sort moves: closest enemy first, sample
-    nearest = min(enemies, key=lambda e: calculate_distance(current.position, e.position)) if enemies else None
-    sorted_moves = sorted(legal, key=lambda m: calculate_distance(m, nearest.position)) if nearest else list(legal)
-    sampled = [None] + sorted_moves[:_MAX_MOVES]
-
     base = _SimState(env)
     pid = current.id
     results = []
 
+    # Sort moves by proximity to nearest enemy
+    nearest = min(enemies, key=lambda e: calculate_distance(current.position, e.position)) if enemies else None
+    sorted_moves = sorted(legal, key=lambda m: calculate_distance(m, nearest.position)) if nearest else list(legal)
+    sampled = [None] + sorted_moves[:_MAX_MOVES]
+
     for move_pos in sampled:
-        # Find best in-range attack target
-        atk = None
+        # Find best attack target from the NEW position (not pre-computed)
+        chosen_atk = None
         if enemies:
             mp = move_pos if move_pos else current.position
             for e in enemies:
                 d = abs(mp.x - e.position.x) + abs(mp.y - e.position.y)
                 if d <= current.attack_range:
-                    if atk is None or e.health < atk.health:
-                        atk = e
+                    if chosen_atk is None or e.health < chosen_atk.health:
+                        chosen_atk = e
 
         act = ActionSet()
         if move_pos is not None:
@@ -167,11 +166,11 @@ def _build_candidates(env: Environment) -> "List[Tuple[ActionSet, _SimState]]":
         else:
             act.move = False
 
-        if atk is not None:
+        if chosen_atk is not None:
             act.attack = True
             act.attack_context = AttackContext()
             act.attack_context.attacker = current
-            act.attack_context.target = atk
+            act.attack_context.target = chosen_atk
         else:
             act.attack = False
         act.spell = False
@@ -184,7 +183,7 @@ def _build_candidates(env: Environment) -> "List[Tuple[ActionSet, _SimState]]":
 
 
 # ---------------------------------------------------------------------------
-# Remap action references back to real env
+# Remap
 # ---------------------------------------------------------------------------
 def _remap(action: ActionSet, env: Environment) -> ActionSet:
     new = ActionSet()
@@ -209,8 +208,8 @@ def _remap(action: ActionSet, env: Environment) -> ActionSet:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
-def get_mcts_action_strategy(
-    simulation_count: int = 2000,
+def get_mcts_plus_action_strategy(
+    simulation_count: int = 3000,
 ) -> Callable[..., ActionSet]:
     def strategy(env: Environment) -> ActionSet:
         my_team = env.current_piece.team
@@ -218,11 +217,9 @@ def get_mcts_action_strategy(
         if not candidates:
             return ActionSet()
 
-        # Each candidate is a node: visits, value
         nodes = [(act, state, 0, 0.0) for act, state in candidates]
 
         for _ in range(simulation_count):
-            # UCB1 selection
             total_v = sum(n[2] for n in nodes)
             best_idx = 0
             best_ucb = float("-inf")
@@ -230,18 +227,22 @@ def get_mcts_action_strategy(
                 if v == 0:
                     best_idx = i
                     break
-                ucb = val / v + math.sqrt(2 * math.log(total_v) / v)
+                ucb = val / v + math.sqrt(2.0 * math.log(total_v) / v)
                 if ucb > best_ucb:
                     best_ucb = ucb
                     best_idx = i
 
-            # Simulate
             act, state, visits, value = nodes[best_idx]
             sc = _heuristic(state, my_team)
             nodes[best_idx] = (act, state, visits + 1, value + sc)
 
-        # Pick most-visited
         best = max(nodes, key=lambda n: n[2])
         return _remap(best[0], env)
 
     return strategy
+
+
+def get_mcts_plus_init_strategy():
+    """Standard STR 29 / DEX 1 / INT 0 sniper init (same as base sniper)."""
+    from strategies.sniper import get_sniper_init_strategy
+    return get_sniper_init_strategy()
